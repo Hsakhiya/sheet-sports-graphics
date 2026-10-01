@@ -63,11 +63,15 @@ function normalizeImageUrl(url) {
 
 // Generate fallback photo avatar
 function getFallbackAvatar(name, number) {
-  const initials = (name || 'SP').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  const initials = (name || 'SP').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  const isNum = Boolean(number);
+  const displayVal = number || initials;
+  const len = displayVal.length;
+  const sizeClass = len <= 2 ? 'text-4xl' : len === 3 ? 'text-3xl' : 'text-2xl';
   return `
-    <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white font-sports font-bold">
-      <span class="text-3xl tracking-wider text-slate-200">${number || initials}</span>
-      <span class="text-[10px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">Player</span>
+    <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white font-sports font-black select-none">
+      <span class="${sizeClass} tracking-wider text-white drop-shadow-md font-num">${displayVal}</span>
+      <span class="text-[9px] uppercase tracking-widest text-primary font-sans font-bold mt-1">${isNum ? 'JERSEY' : 'PLAYER'}</span>
     </div>
   `;
 }
@@ -197,7 +201,7 @@ function buildGraphicHTML(template, data) {
               <img src="${photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top rounded-2xl" onerror="this.onerror=null; this.outerHTML=getFallbackAvatar('${(name || '').replace(/'/g, "\\'")}', '${(number || '').replace(/'/g, "\\'")}')">
             ` : getFallbackAvatar(name, number)}
 
-            ${number ? `
+            ${number && photo ? `
               <div class="absolute bottom-0 right-0 bg-primary/95 text-white font-num font-bold text-3xl px-2.5 py-0.5 rounded-tl-lg shadow-md border-t border-l border-white/20">
                 ${number}
               </div>
@@ -683,6 +687,7 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
         if (targetImg) {
           targetImg.setAttribute('href', cleanVal);
           targetImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', cleanVal);
+          photoBound = true;
           const container = targetImg.closest('g') || targetImg.parentElement || svgEl;
           const fallback = container.querySelector('#player-photo-fallback, [id*="fallback"], [id*="silhouette"]');
           if (fallback) {
@@ -690,6 +695,118 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           }
         }
       }
+    }
+
+    // Jersey Number Fallback when NO photo is provided or bound:
+    if (!photoBound) {
+      // Find jersey number & player name from layerValues or existing SVG text nodes
+      const jerseyNum = String(
+        layerValues['__number__'] ||
+        layerValues['jersey-number'] ||
+        layerValues['number'] ||
+        (svgEl.getElementById('jersey-number')?.textContent || '')
+      ).trim();
+
+      const playerName = String(
+        layerValues['__name__'] ||
+        layerValues['player-name'] ||
+        layerValues['name'] ||
+        (svgEl.getElementById('player-name')?.textContent || '')
+      ).trim();
+
+      const initials = (playerName || 'SP').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+      const fallbackVal = jerseyNum || initials;
+
+      images.forEach((imgEl, imgIdx) => {
+        // Hide the empty or dummy image element so it doesn't display broken placeholder
+        imgEl.style.display = 'none';
+        imgEl.setAttribute('visibility', 'hidden');
+        imgEl.removeAttribute('href');
+        imgEl.removeAttribute('xlink:href');
+        imgEl.removeAttributeNS('http://www.w3.org/1999/xlink', 'href');
+        imgEl.removeAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href');
+
+        const container = imgEl.closest('g') || imgEl.parentElement || svgEl;
+
+        // Hide any generic silhouette avatar if present
+        const oldFallback = container.querySelector('#player-photo-fallback, [id*="fallback"]:not([id*="number"]), [id*="silhouette"]');
+        if (oldFallback) oldFallback.style.display = 'none';
+
+        // Find container shape geometry
+        const shapeW = parseFloat(imgEl.getAttribute('width') || 100);
+        const shapeH = parseFloat(imgEl.getAttribute('height') || 100);
+        const shapeX = parseFloat(imgEl.getAttribute('x') || 0);
+        const shapeY = parseFloat(imgEl.getAttribute('y') || 0);
+        const cx = shapeX + shapeW / 2;
+        const cy = shapeY + shapeH / 2;
+
+        if (fallbackVal) {
+          const fbId = `player-photo-number-fallback-${imgIdx}`;
+          let numGroup = container.querySelector(`#${fbId}`);
+          if (!numGroup) {
+            numGroup = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+            numGroup.setAttribute('id', fbId);
+            container.insertBefore(numGroup, imgEl);
+          } else {
+            numGroup.innerHTML = '';
+          }
+          numGroup.style.display = '';
+
+          // Determine font sizes based on character length and container dimensions
+          const isNum = Boolean(jerseyNum);
+          const len = fallbackVal.length;
+          let numFontSize = Math.round(shapeH * 0.44);
+          if (len === 3) numFontSize = Math.round(shapeH * 0.36);
+          if (len >= 4) numFontSize = Math.round(shapeH * 0.28);
+
+          const hasLabel = shapeH >= 65;
+          const numY = hasLabel ? (cy - Math.round(shapeH * 0.07)) : cy;
+
+          // Main Jersey Number Text
+          const numTextEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+          numTextEl.setAttribute('x', cx.toFixed(1));
+          numTextEl.setAttribute('y', numY.toFixed(1));
+          numTextEl.setAttribute('text-anchor', 'middle');
+          numTextEl.setAttribute('dominant-baseline', 'central');
+          numTextEl.setAttribute('alignment-baseline', 'central');
+          numTextEl.setAttribute('fill', '#ffffff');
+          numTextEl.setAttribute('font-family', "'Chakra Petch', 'Segoe UI', Impact, Arial, sans-serif");
+          numTextEl.setAttribute('font-weight', '900');
+          numTextEl.setAttribute('font-size', String(numFontSize));
+          numTextEl.setAttribute('letter-spacing', '0.5px');
+          numTextEl.style.setProperty('filter', 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))');
+          numTextEl.textContent = fallbackVal;
+          numGroup.appendChild(numTextEl);
+
+          // Subtitle Tag ('JERSEY' or 'PLAYER')
+          if (hasLabel) {
+            const labelTextEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+            const labelY = cy + Math.round(shapeH * 0.28);
+            const labelFontSize = Math.max(8, Math.round(shapeH * 0.085));
+            labelTextEl.setAttribute('x', cx.toFixed(1));
+            labelTextEl.setAttribute('y', labelY.toFixed(1));
+            labelTextEl.setAttribute('text-anchor', 'middle');
+            labelTextEl.setAttribute('dominant-baseline', 'central');
+            labelTextEl.setAttribute('alignment-baseline', 'central');
+            labelTextEl.setAttribute('fill', accentColor || '#94a3b8');
+            labelTextEl.setAttribute('font-family', "'Segoe UI', 'Chakra Petch', Arial, sans-serif");
+            labelTextEl.setAttribute('font-weight', '800');
+            labelTextEl.setAttribute('font-size', String(labelFontSize));
+            labelTextEl.setAttribute('letter-spacing', '1.5px');
+            labelTextEl.textContent = isNum ? 'JERSEY' : 'PLAYER';
+            numGroup.appendChild(labelTextEl);
+          }
+        }
+      });
+    } else {
+      // Photo IS present: ensure image is visible and hide any number fallback group
+      images.forEach(imgEl => {
+        imgEl.style.display = '';
+        imgEl.removeAttribute('visibility');
+      });
+      svgEl.querySelectorAll('[id^="player-photo-number-fallback"]').forEach(fb => {
+        fb.style.display = 'none';
+      });
     }
 
     // Apply custom X/Y element offsets
