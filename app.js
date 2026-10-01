@@ -128,6 +128,24 @@ const THEME_DEFAULT_COLORS = {
 
 const colorCache = new Map();
 
+function normalizeImageUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  let clean = url.trim().replace(/^['"]|['"]$/g, '');
+
+  // Google Drive share / view links -> direct CDN image URL
+  const gDriveMatch = clean.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_\-]+)/);
+  if (gDriveMatch && gDriveMatch[1]) {
+    return `https://lh3.googleusercontent.com/d/${gDriveMatch[1]}`;
+  }
+
+  // Dropbox links: dl=0 -> raw=1
+  if (clean.includes('dropbox.com')) {
+    return clean.replace(/[?&]dl=0/, '?raw=1');
+  }
+
+  return clean;
+}
+
 function rgbToHex(r, g, b) {
   return '#' + [r, g, b].map(x => {
     const hex = Math.round(Math.max(0, Math.min(255, x))).toString(16);
@@ -593,7 +611,7 @@ function getMappedRowData(row) {
     name: nameCol ? (row[nameCol] || '') : (row.Name || row.name || 'Unknown'),
     subtitle: subCol ? (row[subCol] || '') : (row.Team || row.team || ''),
     number: numCol ? (row[numCol] || '') : (row.Number || row.number || ''),
-    photo: photoCol ? (row[photoCol] || '') : (row.Photo || row.photo || ''),
+    photo: normalizeImageUrl(photoCol ? (row[photoCol] || '') : (row.Photo || row.photo || '')),
     color: colorCol ? (row[colorCol] || '') : (row.Color || row.color || ''),
     stats,
     raw: row
@@ -1149,7 +1167,7 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       }
     }
 
-    // Auto-clip images to their container shape & rounded corners
+    // Auto-clip images to their container shape & rounded corners, and adapt image dimensions
     const images = svgEl.querySelectorAll('image');
     if (images.length > 0) {
       let defs = svgEl.querySelector('defs');
@@ -1211,23 +1229,104 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           }
         });
 
-        // Case A: Image already has a valid clipPath element in defs
+        // Calculate container shape geometry
+        let shapeX = 0, shapeY = 0, shapeW = 0, shapeH = 0;
+        let rx = null, ry = null;
+
+        if (bestShape) {
+          const tag = bestShape.tagName.toLowerCase();
+          if (tag === 'rect') {
+            shapeX = parseFloat(bestShape.getAttribute('x') || 0);
+            shapeY = parseFloat(bestShape.getAttribute('y') || 0);
+            shapeW = parseFloat(bestShape.getAttribute('width') || 0);
+            shapeH = parseFloat(bestShape.getAttribute('height') || 0);
+            rx = bestShape.getAttribute('rx') || bestShape.style.rx;
+            ry = bestShape.getAttribute('ry') || bestShape.style.ry;
+          } else if (tag === 'circle') {
+            const cx = parseFloat(bestShape.getAttribute('cx') || 0);
+            const cy = parseFloat(bestShape.getAttribute('cy') || 0);
+            const r = parseFloat(bestShape.getAttribute('r') || 0);
+            shapeX = cx - r;
+            shapeY = cy - r;
+            shapeW = r * 2;
+            shapeH = r * 2;
+          } else if (tag === 'ellipse') {
+            const cx = parseFloat(bestShape.getAttribute('cx') || 0);
+            const cy = parseFloat(bestShape.getAttribute('cy') || 0);
+            const erx = parseFloat(bestShape.getAttribute('rx') || 0);
+            const ery = parseFloat(bestShape.getAttribute('ry') || 0);
+            shapeX = cx - erx;
+            shapeY = cy - ery;
+            shapeW = erx * 2;
+            shapeH = ery * 2;
+          } else if (tag === 'polygon' || tag === 'path') {
+            let pts = [];
+            if (tag === 'polygon') {
+              pts = (bestShape.getAttribute('points') || '').trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+            } else {
+              const d = bestShape.getAttribute('d') || '';
+              pts = (d.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number).filter(n => !isNaN(n));
+            }
+            if (pts.length >= 4) {
+              const xs = pts.filter((_, i) => i % 2 === 0);
+              const ys = pts.filter((_, i) => i % 2 === 1);
+              shapeX = Math.min(...xs);
+              shapeY = Math.min(...ys);
+              shapeW = Math.max(...xs) - shapeX;
+              shapeH = Math.max(...ys) - shapeY;
+            }
+          }
+        }
+
+        // 1. Adapt image dimensions & coordinates to container shape
+        if (shapeW > 0 && shapeH > 0) {
+          const curW = parseFloat(imgEl.getAttribute('width') || 0);
+          const curH = parseFloat(imgEl.getAttribute('height') || 0);
+          if (curW <= 0 || isNaN(curW) || curW <= 10) {
+            imgEl.setAttribute('width', shapeW);
+          }
+          if (curH <= 0 || isNaN(curH) || curH <= 10) {
+            imgEl.setAttribute('height', shapeH);
+          }
+          if (!imgEl.hasAttribute('x') || imgEl.getAttribute('x') === '') {
+            imgEl.setAttribute('x', shapeX);
+          }
+          if (!imgEl.hasAttribute('y') || imgEl.getAttribute('y') === '') {
+            imgEl.setAttribute('y', shapeY);
+          }
+          if (!imgEl.hasAttribute('preserveAspectRatio')) {
+            imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+          }
+
+          // Strip residual dummy Illustrator transforms (e.g. scale(106) or matrix)
+          // that expand dummy placeholders or shift the image out of view
+          const curTransform = imgEl.getAttribute('transform') || '';
+          if (curTransform.includes('scale(') || curTransform.includes('matrix(')) {
+            imgEl.removeAttribute('transform');
+          }
+        } else {
+          // If no container shape found, ensure image has dimensions so browser can render
+          if (!imgEl.hasAttribute('width')) imgEl.setAttribute('width', '100');
+          if (!imgEl.hasAttribute('height')) imgEl.setAttribute('height', '100');
+          if (!imgEl.hasAttribute('preserveAspectRatio')) {
+            imgEl.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+          }
+        }
+
+        // 2. Build or update clipPath to match container's shape and rounded corners
         if (existingClipPathEl) {
-          // If container shape has rounded corners (rx/ry), ensure the existing clipPath rect adopts them
           if (bestShape && bestShape.tagName.toLowerCase() === 'rect') {
             const clipRect = existingClipPathEl.querySelector('rect');
             if (clipRect) {
-              const rx = bestShape.getAttribute('rx') || bestShape.style.rx;
-              const ry = bestShape.getAttribute('ry') || bestShape.style.ry;
               if (rx) clipRect.setAttribute('rx', rx);
               if (ry) clipRect.setAttribute('ry', ry || rx);
+              if (shapeW > 0) clipRect.setAttribute('width', shapeW);
+              if (shapeH > 0) clipRect.setAttribute('height', shapeH);
+              clipRect.setAttribute('x', shapeX);
+              clipRect.setAttribute('y', shapeY);
             }
           }
-          return;
-        }
-
-        // Case B: Create clipPath from container shape if shape exists
-        if (bestShape) {
+        } else if (bestShape) {
           const imgId = imgEl.id || `img-${imgIdx}`;
           const clipId = `auto-clip-${imgId}`;
           let clipPathEl = svgEl.getElementById(clipId);
@@ -1242,21 +1341,12 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           const tag = bestShape.tagName.toLowerCase();
           if (tag === 'rect') {
             const clipRect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            const x = bestShape.getAttribute('x') || imgEl.getAttribute('x') || '0';
-            const y = bestShape.getAttribute('y') || imgEl.getAttribute('y') || '0';
-            const w = bestShape.getAttribute('width') || imgEl.getAttribute('width') || '100';
-            const h = bestShape.getAttribute('height') || imgEl.getAttribute('height') || '100';
-
-            let rx = bestShape.getAttribute('rx') || bestShape.style.rx;
-            let ry = bestShape.getAttribute('ry') || bestShape.style.ry;
-
-            clipRect.setAttribute('x', x);
-            clipRect.setAttribute('y', y);
-            clipRect.setAttribute('width', w);
-            clipRect.setAttribute('height', h);
+            clipRect.setAttribute('x', shapeX);
+            clipRect.setAttribute('y', shapeY);
+            clipRect.setAttribute('width', shapeW);
+            clipRect.setAttribute('height', shapeH);
             if (rx) clipRect.setAttribute('rx', rx);
             if (ry) clipRect.setAttribute('ry', ry || rx);
-
             clipPathEl.appendChild(clipRect);
           } else if (tag === 'polygon') {
             const clipPoly = doc.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -1264,16 +1354,16 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
             clipPathEl.appendChild(clipPoly);
           } else if (tag === 'circle') {
             const clipCircle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            clipCircle.setAttribute('cx', bestShape.getAttribute('cx') || '0');
-            clipCircle.setAttribute('cy', bestShape.getAttribute('cy') || '0');
-            clipCircle.setAttribute('r', bestShape.getAttribute('r') || '0');
+            clipCircle.setAttribute('cx', shapeX + shapeW / 2);
+            clipCircle.setAttribute('cy', shapeY + shapeH / 2);
+            clipCircle.setAttribute('r', shapeW / 2);
             clipPathEl.appendChild(clipCircle);
           } else if (tag === 'ellipse') {
             const clipEllipse = doc.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-            clipEllipse.setAttribute('cx', bestShape.getAttribute('cx') || '0');
-            clipEllipse.setAttribute('cy', bestShape.getAttribute('cy') || '0');
-            clipEllipse.setAttribute('rx', bestShape.getAttribute('rx') || '0');
-            clipEllipse.setAttribute('ry', bestShape.getAttribute('ry') || '0');
+            clipEllipse.setAttribute('cx', shapeX + shapeW / 2);
+            clipEllipse.setAttribute('cy', shapeY + shapeH / 2);
+            clipEllipse.setAttribute('rx', shapeW / 2);
+            clipEllipse.setAttribute('ry', shapeH / 2);
             clipPathEl.appendChild(clipEllipse);
           } else if (tag === 'path') {
             const clipPathShape = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -1281,7 +1371,6 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
             clipPathEl.appendChild(clipPathShape);
           }
 
-          // ONLY set attribute — NEVER set imgEl.style.clipPath
           imgEl.setAttribute('clip-path', `url(#${clipId})`);
         }
       });
@@ -1332,6 +1421,7 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       }
     }
 
+    let photoBound = false;
     for (const [id, val] of Object.entries(layerValues)) {
       if (val === undefined || val === null || val === '') continue;
       const target = svgEl.getElementById(id) || svgEl.querySelector('#' + CSS.escape(id));
@@ -1341,8 +1431,10 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       if (tag === 'text' || tag === 'tspan') {
         target.textContent = String(val);
       } else if (tag === 'image') {
-        target.setAttribute('href', String(val));
-        target.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', String(val));
+        const cleanVal = normalizeImageUrl(String(val));
+        target.setAttribute('href', cleanVal);
+        target.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', cleanVal);
+        photoBound = true;
         // When photo URL is present, hide the fallback silhouette avatar
         const container = target.closest('g') || target.parentElement || svgEl;
         const fallback = container.querySelector('#player-photo-fallback, [id*="fallback"], [id*="silhouette"]');
@@ -1351,6 +1443,43 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
         }
       } else if (typeof val === 'string' && (val.startsWith('#') || val.startsWith('rgb'))) {
         target.setAttribute('fill', val);
+      }
+    }
+
+    // Smart Photo Layer Fallback:
+    // If an <image> element exists in the SVG but wasn't bound by ID mapping,
+    // find any photo/image URL in layerValues and bind it to the photo <image>!
+    if (!photoBound) {
+      let photoVal = null;
+      for (const [k, v] of Object.entries(layerValues)) {
+        if (typeof v === 'string' && v.trim()) {
+          const lk = k.toLowerCase();
+          const lv = v.toLowerCase();
+          if (lk.includes('photo') || lk.includes('avatar') || lk.includes('image') ||
+              lv.startsWith('http://') || lv.startsWith('https://') || lv.startsWith('data:image/') || lv.startsWith('blob:')) {
+            photoVal = v;
+            break;
+          }
+        }
+      }
+
+      if (photoVal) {
+        const cleanVal = normalizeImageUrl(photoVal);
+        const images = Array.from(svgEl.querySelectorAll('image'));
+        const targetImg = images.find(img => {
+          const lowId = (img.id || '').toLowerCase();
+          return lowId.includes('photo') || lowId.includes('player') || lowId.includes('avatar') || lowId.includes('headshot') || lowId.includes('img');
+        }) || images[0];
+
+        if (targetImg) {
+          targetImg.setAttribute('href', cleanVal);
+          targetImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', cleanVal);
+          const container = targetImg.closest('g') || targetImg.parentElement || svgEl;
+          const fallback = container.querySelector('#player-photo-fallback, [id*="fallback"], [id*="silhouette"]');
+          if (fallback) {
+            fallback.style.display = 'none';
+          }
+        }
       }
     }
 
@@ -1448,6 +1577,9 @@ function computeSvgLayerValues(rawRow, mapped, categoryTag) {
         }
         break;
     }
+  }
+  if (mapped && mapped.photo) {
+    result['__photo__'] = mapped.photo;
   }
   return result;
 }
