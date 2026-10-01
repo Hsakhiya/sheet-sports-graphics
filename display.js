@@ -64,14 +64,12 @@ function normalizeImageUrl(url) {
 // Generate fallback photo avatar
 function getFallbackAvatar(name, number) {
   const initials = (name || 'SP').split(' ').map(n => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
-  const isNum = Boolean(number);
   const displayVal = number || initials;
   const len = displayVal.length;
   const sizeClass = len <= 2 ? 'text-4xl' : len === 3 ? 'text-3xl' : 'text-2xl';
   return `
     <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white font-sports font-black select-none">
       <span class="${sizeClass} tracking-wider text-white drop-shadow-md font-num">${displayVal}</span>
-      <span class="text-[9px] uppercase tracking-widest text-primary font-sans font-bold mt-1">${isNum ? 'JERSEY' : 'PLAYER'}</span>
     </div>
   `;
 }
@@ -753,19 +751,15 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           numGroup.style.display = '';
 
           // Determine font sizes based on character length and container dimensions
-          const isNum = Boolean(jerseyNum);
           const len = fallbackVal.length;
-          let numFontSize = Math.round(shapeH * 0.44);
-          if (len === 3) numFontSize = Math.round(shapeH * 0.36);
-          if (len >= 4) numFontSize = Math.round(shapeH * 0.28);
+          let numFontSize = Math.round(shapeH * 0.52);
+          if (len === 3) numFontSize = Math.round(shapeH * 0.42);
+          if (len >= 4) numFontSize = Math.round(shapeH * 0.32);
 
-          const hasLabel = shapeH >= 65;
-          const numY = hasLabel ? (cy - Math.round(shapeH * 0.07)) : cy;
-
-          // Main Jersey Number Text
+          // Main Jersey Number Text (cleanly centered at cx, cy)
           const numTextEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
           numTextEl.setAttribute('x', cx.toFixed(1));
-          numTextEl.setAttribute('y', numY.toFixed(1));
+          numTextEl.setAttribute('y', cy.toFixed(1));
           numTextEl.setAttribute('text-anchor', 'middle');
           numTextEl.setAttribute('dominant-baseline', 'central');
           numTextEl.setAttribute('alignment-baseline', 'central');
@@ -774,28 +768,9 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           numTextEl.setAttribute('font-weight', '900');
           numTextEl.setAttribute('font-size', String(numFontSize));
           numTextEl.setAttribute('letter-spacing', '0.5px');
-          numTextEl.style.setProperty('filter', 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))');
+          numTextEl.style.setProperty('filter', 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))');
           numTextEl.textContent = fallbackVal;
           numGroup.appendChild(numTextEl);
-
-          // Subtitle Tag ('JERSEY' or 'PLAYER')
-          if (hasLabel) {
-            const labelTextEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
-            const labelY = cy + Math.round(shapeH * 0.28);
-            const labelFontSize = Math.max(8, Math.round(shapeH * 0.085));
-            labelTextEl.setAttribute('x', cx.toFixed(1));
-            labelTextEl.setAttribute('y', labelY.toFixed(1));
-            labelTextEl.setAttribute('text-anchor', 'middle');
-            labelTextEl.setAttribute('dominant-baseline', 'central');
-            labelTextEl.setAttribute('alignment-baseline', 'central');
-            labelTextEl.setAttribute('fill', accentColor || '#94a3b8');
-            labelTextEl.setAttribute('font-family', "'Segoe UI', 'Chakra Petch', Arial, sans-serif");
-            labelTextEl.setAttribute('font-weight', '800');
-            labelTextEl.setAttribute('font-size', String(labelFontSize));
-            labelTextEl.setAttribute('letter-spacing', '1.5px');
-            labelTextEl.textContent = isNum ? 'JERSEY' : 'PLAYER';
-            numGroup.appendChild(labelTextEl);
-          }
         }
       });
     } else {
