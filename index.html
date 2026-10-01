@@ -268,8 +268,8 @@
 
     </div>
 
-    <!-- Middle Column: Broadcast Controls & SVG Studio (3 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-3 flex flex-col gap-5">
+    <!-- Middle Column: Broadcast Controls & SVG Studio (4 Cols on xl) -->
+    <div class="lg:col-span-6 xl:col-span-4 flex flex-col gap-5">
 
       <!-- Live Broadcast Master Control Bar -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -405,8 +405,8 @@
 
     </div>
 
-    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Position Inspector (4 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-4 flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
+    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Position Inspector (3 Cols on xl) -->
+    <div class="lg:col-span-6 xl:col-span-3 flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
 
       <!-- Simulated On-Air Live Preview Canvas -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
@@ -494,78 +494,78 @@
         </div>
 
         <!-- Element Dropdown Selector & Highlight Toggle -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-          <div class="sm:col-span-2">
+        <div class="flex flex-col gap-2.5 mb-3">
+          <div>
             <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Select Target to Position</label>
             <div class="flex items-center gap-2">
               <select id="pos-element-select" class="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-mono focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-400 outline-none">
                 <!-- Dynamically populated from SVG layer elements -->
               </select>
-              <button id="btn-reset-element-pos" title="Reset selected element position to 0,0" class="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-sports font-semibold border border-slate-700 transition whitespace-nowrap">
+              <button id="btn-reset-element-pos" title="Reset selected element position to 0,0" class="px-2.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-sports font-semibold border border-slate-700 transition whitespace-nowrap">
                 Reset (0,0)
               </button>
             </div>
           </div>
 
-          <div class="flex flex-col justify-end">
-            <label class="flex items-center gap-2 cursor-pointer select-none bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 hover:border-cyan-500/40 transition">
-              <input type="checkbox" id="highlight-element-toggle" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
-              <span class="text-[11px] font-sports font-semibold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
-                <i data-lucide="crosshair" class="w-3.5 h-3.5 text-cyan-400"></i>
-                <span>Highlight on Preview</span>
-              </span>
-            </label>
-          </div>
+          <label class="flex items-center gap-2 cursor-pointer select-none bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 hover:border-cyan-500/40 transition">
+            <input type="checkbox" id="highlight-element-toggle" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
+            <span class="text-[11px] font-sports font-semibold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Highlight on Preview</span>
+            </span>
+          </label>
         </div>
 
         <!-- X and Y Controls + Micro-Nudge D-Pad -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5">
-          <!-- X-Axis Control -->
-          <div class="flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-sports font-bold tracking-wider uppercase text-cyan-400 flex items-center gap-1">
-                <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
-                <span>X Coordinate (Horizontal)</span>
-              </span>
+        <div class="flex flex-col gap-3 bg-slate-950/70 border border-slate-800/80 rounded-xl p-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- X-Axis Control -->
+            <div class="flex flex-col justify-between bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/60">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-sports font-bold tracking-wider uppercase text-cyan-400 flex items-center gap-1">
+                  <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
+                  <span>X (Horizontal)</span>
+                </span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="pos-x-input" value="0" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-cyan-400 outline-none">
+                  <span class="text-[11px] text-slate-500">px</span>
+                </div>
+              </div>
+              <input type="range" id="pos-x-slider" min="-200" max="200" step="1" value="0" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-2">
               <div class="flex items-center gap-1">
-                <input type="number" id="pos-x-input" value="0" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-cyan-400 outline-none">
-                <span class="text-[11px] text-slate-500">px</span>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="-10">-10</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="-1">-1</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="1">+1</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="10">+10</button>
               </div>
             </div>
-            <input type="range" id="pos-x-slider" min="-200" max="200" step="1" value="0" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-2">
-            <div class="flex items-center gap-1">
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="-10">-10</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="-1">-1</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="1">+1</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="x" data-delta="10">+10</button>
-            </div>
-          </div>
 
-          <!-- Y-Axis Control -->
-          <div class="flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-xs font-sports font-bold tracking-wider uppercase text-cyan-400 flex items-center gap-1">
-                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
-                <span>Y Coordinate (Vertical)</span>
-              </span>
-              <div class="flex items-center gap-1">
-                <input type="number" id="pos-y-input" value="0" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-cyan-400 outline-none">
-                <span class="text-[11px] text-slate-500">px</span>
+            <!-- Y-Axis Control -->
+            <div class="flex flex-col justify-between bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/60">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-sports font-bold tracking-wider uppercase text-cyan-400 flex items-center gap-1">
+                  <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+                  <span>Y (Vertical)</span>
+                </span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="pos-y-input" value="0" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-cyan-400 outline-none">
+                  <span class="text-[11px] text-slate-500">px</span>
+                </div>
               </div>
-            </div>
-            <input type="range" id="pos-y-slider" min="-200" max="200" step="1" value="0" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-2">
-            <div class="flex items-center gap-1">
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="-10">-10</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="-1">-1</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="1">+1</button>
-              <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="10">+10</button>
+              <input type="range" id="pos-y-slider" min="-200" max="200" step="1" value="0" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-2">
+              <div class="flex items-center gap-1">
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="-10">-10</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="-1">-1</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="1">+1</button>
+                <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="10">+10</button>
+              </div>
             </div>
           </div>
 
           <!-- Micro-Nudge D-Pad -->
-          <div class="flex flex-col items-center justify-center pt-1">
-            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 mb-1">Micro-Nudge D-Pad</span>
-            <div class="grid grid-cols-3 gap-1 w-28">
+          <div class="flex flex-col items-center justify-center pt-1.5 border-t border-slate-800/70">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 mb-1.5">Micro-Nudge D-Pad (2px)</span>
+            <div class="grid grid-cols-3 gap-1.5 w-32">
               <div></div>
               <button class="btn-dpad p-1.5 rounded-lg bg-slate-900 hover:bg-cyan-500 hover:text-slate-950 border border-slate-800 flex items-center justify-center text-slate-300 transition active:scale-95" data-dx="0" data-dy="-2" title="Nudge Up 2px">
                 <i data-lucide="chevron-up" class="w-4 h-4"></i>
