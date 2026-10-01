@@ -14,24 +14,24 @@ let autoSyncTimer = null;
 const PRESETS = {
   soccer: [
     { Name: 'Kylian Mbappé', Team: 'Real Madrid', Number: '9', Goals: '18', Assists: '7', 'Top Speed': '36.2 km/h', Rating: '8.9', Color: '#d4af37', Photo: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=400&auto=format&fit=crop&q=80' },
-    { Name: 'Erling Haaland', Team: 'Manchester City', Number: '9', Goals: '27', Assists: '5', xG: '24.2', Rating: '9.2', Color: '#6cabdd', Photo: '' },
-    { Name: 'Jude Bellingham', Team: 'Real Madrid', Number: '5', Goals: '14', Assists: '10', 'Duels Won': '64%', Rating: '8.7', Color: '#d4af37', Photo: '' },
-    { Name: 'Lamine Yamal', Team: 'FC Barcelona', Number: '19', Goals: '7', Assists: '12', Dribbles: '89', Rating: '8.8', Color: '#a50044', Photo: '' },
-    { Name: 'Kevin De Bruyne', Team: 'Manchester City', Number: '17', Goals: '6', Assists: '18', 'Pass Acc': '88%', Rating: '8.6', Color: '#6cabdd', Photo: '' }
+    { Name: 'Erling Haaland', Team: 'Manchester City', Number: '9', Goals: '27', Assists: '5', xG: '24.2', Rating: '9.2', Color: '#6cabdd', Photo: 'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Jude Bellingham', Team: 'Real Madrid', Number: '5', Goals: '14', Assists: '10', 'Duels Won': '64%', Rating: '8.7', Color: '#d4af37', Photo: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Lamine Yamal', Team: 'FC Barcelona', Number: '19', Goals: '7', Assists: '12', Dribbles: '89', Rating: '8.8', Color: '#a50044', Photo: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Kevin De Bruyne', Team: 'Manchester City', Number: '17', Goals: '6', Assists: '18', 'Pass Acc': '88%', Rating: '8.6', Color: '#6cabdd', Photo: 'https://images.unsplash.com/photo-1560272564-c83b66b1ad12?w=400&auto=format&fit=crop&q=80' }
   ],
   cricket: [
-    { Name: 'Virat Kohli', Team: 'India', Number: '18', Runs: '765', Average: '95.6', 'Strike Rate': '90.3', '100s': '3', Color: '#0055a5', Photo: '' },
-    { Name: 'Jasprit Bumrah', Team: 'India', Number: '93', Wickets: '20', Economy: '4.12', Average: '15.2', Overs: '84', Color: '#0055a5', Photo: '' },
-    { Name: 'Rohit Sharma', Team: 'India', Number: '45', Runs: '597', 'Strike Rate': '125.9', '6s': '31', '50s': '4', Color: '#0055a5', Photo: '' },
-    { Name: 'Ben Stokes', Team: 'England', Number: '55', Runs: '404', Wickets: '8', 'Strike Rate': '98.4', Rating: '9.0', Color: '#cf102d', Photo: '' },
-    { Name: 'Travis Head', Team: 'Australia', Number: '62', Runs: '548', 'Strike Rate': '112.5', '100s': '2', '4s': '58', Color: '#00843d', Photo: '' }
+    { Name: 'Virat Kohli', Team: 'India', Number: '18', Runs: '765', Average: '95.6', 'Strike Rate': '90.3', '100s': '3', Color: '#0055a5', Photo: 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Jasprit Bumrah', Team: 'India', Number: '93', Wickets: '20', Economy: '4.12', Average: '15.2', Overs: '84', Color: '#0055a5', Photo: 'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Rohit Sharma', Team: 'India', Number: '45', Runs: '597', 'Strike Rate': '125.9', '6s': '31', '50s': '4', Color: '#0055a5', Photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Ben Stokes', Team: 'England', Number: '55', Runs: '404', Wickets: '8', 'Strike Rate': '98.4', Rating: '9.0', Color: '#cf102d', Photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Travis Head', Team: 'Australia', Number: '62', Runs: '548', 'Strike Rate': '112.5', '100s': '2', '4s': '58', Color: '#00843d', Photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80' }
   ],
   basketball: [
-    { Name: 'LeBron James', Team: 'Los Angeles Lakers', Number: '23', PPG: '25.7', RPG: '7.3', APG: '8.3', 'FG%': '54.0%', Color: '#552583', Photo: '' },
-    { Name: 'Stephen Curry', Team: 'Golden State Warriors', Number: '30', PPG: '26.4', '3PT%': '40.8%', 'FT%': '92.3%', APG: '5.1', Color: '#1d428a', Photo: '' },
-    { Name: 'Luka Dončić', Team: 'Dallas Mavericks', Number: '77', PPG: '33.9', RPG: '9.2', APG: '9.8', 'Triple-Db': '21', Color: '#00538c', Photo: '' },
-    { Name: 'Giannis Antetokounmpo', Team: 'Milwaukee Bucks', Number: '34', PPG: '30.4', RPG: '11.5', 'FG%': '61.1%', BPG: '1.1', Color: '#00471b', Photo: '' },
-    { Name: 'Nikola Jokić', Team: 'Denver Nuggets', Number: '15', PPG: '26.4', RPG: '12.4', APG: '9.0', 'FG%': '58.3%', Color: '#0e2240', Photo: '' }
+    { Name: 'LeBron James', Team: 'Los Angeles Lakers', Number: '23', PPG: '25.7', RPG: '7.3', APG: '8.3', 'FG%': '54.0%', Color: '#552583', Photo: 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Stephen Curry', Team: 'Golden State Warriors', Number: '30', PPG: '26.4', '3PT%': '40.8%', 'FT%': '92.3%', APG: '5.1', Color: '#1d428a', Photo: 'https://images.unsplash.com/photo-1519766304817-4f37bda74a29?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Luka Dončić', Team: 'Dallas Mavericks', Number: '77', PPG: '33.9', RPG: '9.2', APG: '9.8', 'Triple-Db': '21', Color: '#00538c', Photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Giannis Antetokounmpo', Team: 'Milwaukee Bucks', Number: '34', PPG: '30.4', RPG: '11.5', 'FG%': '61.1%', BPG: '1.1', Color: '#00471b', Photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80' },
+    { Name: 'Nikola Jokić', Team: 'Denver Nuggets', Number: '15', PPG: '26.4', RPG: '12.4', APG: '9.0', 'FG%': '58.3%', Color: '#0e2240', Photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80' }
   ],
   match: [
     { Name: 'Real Madrid vs Man City', Team: 'UEFA Champions League', Score1: '3', Score2: '3', Period: "87' 2nd Half", Note: 'Quarter-Final 1st Leg' },
@@ -995,12 +995,55 @@ function renderConfidencePreview(payload) {
     return;
   }
 
+  if (template === 'commentator') {
+    previewRenderArea.innerHTML = `
+      <div class="skew-slant bg-slate-950/95 border-l-4 px-4 py-2.5 text-white shadow-2xl" style="border-color: var(--primary);">
+        <div class="text-[9px] font-sports font-bold uppercase tracking-wider" style="color: var(--primary);">${data.category || 'LIVE COMMENTARY'}</div>
+        <div class="text-base font-sports font-black uppercase tracking-wider">${name}</div>
+        <div class="text-xs text-amber-400 font-semibold">${subtitle}</div>
+      </div>
+    `;
+    return;
+  }
+
+  if (template === 'breaking_alert') {
+    previewRenderArea.innerHTML = `
+      <div class="skew-slant bg-slate-950/95 border-2 px-4 py-2 text-white shadow-2xl" style="border-color: var(--primary);">
+        <div class="text-slate-950 font-sports font-black text-[9px] px-2 py-0.5 uppercase tracking-wider inline-block rounded mb-1" style="background-color: var(--primary);">${data.category || 'BREAKING ALERT'}</div>
+        <div class="text-base font-sports font-black uppercase tracking-wider">${name}</div>
+        <div class="text-xs text-amber-400 font-semibold">${subtitle}</div>
+      </div>
+    `;
+    return;
+  }
+
+  // Helper for preview fallback avatar
+  window.getPreviewFallbackAvatar = function(n, num) {
+    const inits = (n || 'SP').split(' ').map(x => x[0]).slice(0, 2).join('').toUpperCase();
+    return `
+      <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white font-sports font-bold">
+        <span class="text-xl tracking-wider text-slate-200">${num || inits}</span>
+        <span class="text-[8px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">Player</span>
+      </div>
+    `;
+  };
+
+  const initials = (name || 'SP').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  const safeName = (name || '').replace(/'/g, "\\'");
+  const safeNum = (number || '').replace(/'/g, "\\'");
+  const fallbackAvatarHtml = window.getPreviewFallbackAvatar(name, number);
+
   previewRenderArea.innerHTML = `
     <div class="flex items-end select-none">
-      <div class="w-14 h-16 bg-slate-800 border-2 rounded-t-lg flex items-center justify-center font-num font-bold text-2xl text-white mr-1 shadow-lg" style="border-color: var(--primary);">
-        ${number || 'SP'}
+      <!-- Player Photo / Avatar Card (Adapts to rounded-xl container) -->
+      <div class="relative w-16 h-20 bg-slate-900 border-2 rounded-xl overflow-hidden shadow-xl flex-shrink-0 z-20 -mr-2 mb-0.5" style="border-color: var(--primary);">
+        ${data.photo ? `
+          <img src="${data.photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top rounded-xl" onerror="this.onerror=null; this.outerHTML=window.getPreviewFallbackAvatar('${safeName}', '${safeNum}')">
+        ` : fallbackAvatarHtml}
       </div>
-      <div class="flex-1 skew-slant bg-slate-950/95 border-t-2 border-r border-b px-4 py-2 text-white shadow-2xl" style="border-color: var(--primary);">
+
+      <!-- Main Stats Plate -->
+      <div class="flex-1 skew-slant bg-slate-950/95 border-t-2 border-r border-b px-4 py-2 text-white shadow-2xl pl-5" style="border-color: var(--primary);">
         <div class="text-[9px] font-sports font-bold uppercase" style="color: var(--accent);">${subtitle}</div>
         <div class="text-base font-sports font-black uppercase tracking-wider">${name}</div>
         <div class="flex gap-2 mt-1">
@@ -1116,6 +1159,15 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       }
 
       images.forEach((imgEl, imgIdx) => {
+        // Strip any buggy inline style clipPath so XMLSerializer doesn't create style="clip-path: url(&quot;...&quot;)"
+        imgEl.style.removeProperty('clip-path');
+
+        // Check if image already has a clip-path attribute
+        const existingClipAttr = imgEl.getAttribute('clip-path') || '';
+        const clipIdMatch = existingClipAttr.match(/#([a-zA-Z0-9_\-]+)/);
+        const existingClipId = clipIdMatch ? clipIdMatch[1] : null;
+        let existingClipPathEl = existingClipId ? svgEl.getElementById(existingClipId) : null;
+
         const container = imgEl.closest('g') || imgEl.parentElement || svgEl;
         const candidateShapes = Array.from(container.querySelectorAll('rect, polygon, circle, ellipse, path'))
           .filter(shape => {
@@ -1159,6 +1211,22 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           }
         });
 
+        // Case A: Image already has a valid clipPath element in defs
+        if (existingClipPathEl) {
+          // If container shape has rounded corners (rx/ry), ensure the existing clipPath rect adopts them
+          if (bestShape && bestShape.tagName.toLowerCase() === 'rect') {
+            const clipRect = existingClipPathEl.querySelector('rect');
+            if (clipRect) {
+              const rx = bestShape.getAttribute('rx') || bestShape.style.rx;
+              const ry = bestShape.getAttribute('ry') || bestShape.style.ry;
+              if (rx) clipRect.setAttribute('rx', rx);
+              if (ry) clipRect.setAttribute('ry', ry || rx);
+            }
+          }
+          return;
+        }
+
+        // Case B: Create clipPath from container shape if shape exists
         if (bestShape) {
           const imgId = imgEl.id || `img-${imgIdx}`;
           const clipId = `auto-clip-${imgId}`;
@@ -1213,8 +1281,8 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
             clipPathEl.appendChild(clipPathShape);
           }
 
+          // ONLY set attribute — NEVER set imgEl.style.clipPath
           imgEl.setAttribute('clip-path', `url(#${clipId})`);
-          imgEl.style.clipPath = `url(#${clipId})`;
         }
       });
     }
@@ -1275,6 +1343,12 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       } else if (tag === 'image') {
         target.setAttribute('href', String(val));
         target.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', String(val));
+        // When photo URL is present, hide the fallback silhouette avatar
+        const container = target.closest('g') || target.parentElement || svgEl;
+        const fallback = container.querySelector('#player-photo-fallback, [id*="fallback"], [id*="silhouette"]');
+        if (fallback) {
+          fallback.style.display = 'none';
+        }
       } else if (typeof val === 'string' && (val.startsWith('#') || val.startsWith('rgb'))) {
         target.setAttribute('fill', val);
       }
@@ -1440,6 +1514,18 @@ function loadSvgMarkup(svgText, filename = 'custom.svg') {
 }
 
 function autoMapSvgLayers() {
+  // First pass: accurately map <image> element to auto_photo
+  const imageLayers = svgLayerElements.filter(l => l.type === 'image');
+  if (imageLayers.length > 0) {
+    const photoImg = imageLayers.find(l => {
+      const low = l.id.toLowerCase();
+      return low.includes('photo') || low.includes('player') || low.includes('img') || low.includes('headshot') || low.includes('avatar');
+    }) || imageLayers[0];
+    if (photoImg && !svgLayerMappings[photoImg.id]) {
+      svgLayerMappings[photoImg.id] = 'auto_photo';
+    }
+  }
+
   svgLayerElements.forEach(({ id, type }) => {
     const lower = id.toLowerCase();
     if (svgLayerMappings[id]) return;
@@ -1450,7 +1536,7 @@ function autoMapSvgLayers() {
       svgLayerMappings[id] = 'auto_team';
     } else if (lower.includes('jersey') || lower.includes('number')) {
       svgLayerMappings[id] = 'auto_number';
-    } else if (lower.includes('photo') || lower.includes('image') || lower.includes('avatar') || lower.includes('headshot')) {
+    } else if (type === 'image' || ((lower.includes('photo') || lower.includes('image') || lower.includes('avatar') || lower.includes('headshot')) && type !== 'group')) {
       svgLayerMappings[id] = 'auto_photo';
     } else if (lower.includes('category') || lower.includes('league') || lower.includes('tag')) {
       svgLayerMappings[id] = 'auto_category';

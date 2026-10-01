@@ -173,9 +173,9 @@ function buildGraphicHTML(template, data) {
       return `
         <div class="flex items-end shadow-2xl select-none">
           <!-- Left: Player Photo / Avatar Card -->
-          <div class="relative w-36 h-40 bg-slate-900 border-2 border-primary rounded-t-xl overflow-hidden shadow-2xl anim-badge-enter flex-shrink-0 z-20 -mr-4 mb-1">
+          <div class="relative w-36 h-40 bg-slate-900 border-2 border-primary rounded-2xl overflow-hidden shadow-2xl anim-badge-enter flex-shrink-0 z-20 -mr-4 mb-1">
             ${photo ? `
-              <img src="${photo}" alt="${name}" class="w-full h-full object-cover object-top" onerror="this.outerHTML=getFallbackAvatar('${name}', '${number}')">
+              <img src="${photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top rounded-2xl" onerror="this.onerror=null; this.outerHTML=getFallbackAvatar('${(name || '').replace(/'/g, "\\'")}', '${(number || '').replace(/'/g, "\\'")}')">
             ` : getFallbackAvatar(name, number)}
 
             ${number ? `
@@ -367,6 +367,15 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       }
 
       images.forEach((imgEl, imgIdx) => {
+        // Strip any buggy inline style clipPath so XMLSerializer doesn't create style="clip-path: url(&quot;...&quot;)"
+        imgEl.style.removeProperty('clip-path');
+
+        // Check if image already has a clip-path attribute
+        const existingClipAttr = imgEl.getAttribute('clip-path') || '';
+        const clipIdMatch = existingClipAttr.match(/#([a-zA-Z0-9_\-]+)/);
+        const existingClipId = clipIdMatch ? clipIdMatch[1] : null;
+        let existingClipPathEl = existingClipId ? svgEl.getElementById(existingClipId) : null;
+
         const container = imgEl.closest('g') || imgEl.parentElement || svgEl;
         const candidateShapes = Array.from(container.querySelectorAll('rect, polygon, circle, ellipse, path'))
           .filter(shape => {
@@ -410,6 +419,22 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           }
         });
 
+        // Case A: Image already has a valid clipPath element in defs
+        if (existingClipPathEl) {
+          // If container shape has rounded corners (rx/ry), ensure the existing clipPath rect adopts them
+          if (bestShape && bestShape.tagName.toLowerCase() === 'rect') {
+            const clipRect = existingClipPathEl.querySelector('rect');
+            if (clipRect) {
+              const rx = bestShape.getAttribute('rx') || bestShape.style.rx;
+              const ry = bestShape.getAttribute('ry') || bestShape.style.ry;
+              if (rx) clipRect.setAttribute('rx', rx);
+              if (ry) clipRect.setAttribute('ry', ry || rx);
+            }
+          }
+          return;
+        }
+
+        // Case B: Create clipPath from container shape if shape exists
         if (bestShape) {
           const imgId = imgEl.id || `img-${imgIdx}`;
           const clipId = `auto-clip-${imgId}`;
@@ -464,8 +489,8 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
             clipPathEl.appendChild(clipPathShape);
           }
 
+          // ONLY set attribute — NEVER set imgEl.style.clipPath
           imgEl.setAttribute('clip-path', `url(#${clipId})`);
-          imgEl.style.clipPath = `url(#${clipId})`;
         }
       });
     }
@@ -527,6 +552,12 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
       } else if (tag === 'image') {
         target.setAttribute('href', String(val));
         target.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', String(val));
+        // When photo URL is present, hide the fallback silhouette avatar
+        const container = target.closest('g') || target.parentElement || svgEl;
+        const fallback = container.querySelector('#player-photo-fallback, [id*="fallback"], [id*="silhouette"]');
+        if (fallback) {
+          fallback.style.display = 'none';
+        }
       } else if (typeof val === 'string' && (val.startsWith('#') || val.startsWith('rgb'))) {
         target.setAttribute('fill', val);
       }
