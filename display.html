@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Broadcast Overlay | Display Window</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: 'var(--primary)',
+            secondary: 'var(--secondary)',
+            accent: 'var(--accent)',
+            slate: {
+              850: '#151c2e',
+              950: '#070b14'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+      background-color: transparent;
+    }
+
+    /* Helper backdrop modes for studio testing */
+    body.mode-transparent {
+      background-color: transparent;
+    }
+    body.mode-greenscreen {
+      background-color: #00ff00;
+    }
+    body.mode-darkstudio {
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    }
+
+    /* Floating Display Toolbar - auto hides during broadcast */
+    #display-toolbar {
+      opacity: 0;
+      transition: opacity 0.25s ease-in-out;
+    }
+    #display-toolbar:hover, body:hover #display-toolbar {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="mode-transparent" data-theme="espn-red">
+
+  <!-- Floating On-Screen Toolbar for Display / Monitor Setup (Hover to reveal) -->
+  <div id="display-toolbar" class="fixed top-4 right-4 z-50 flex items-center gap-2 bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3 py-2 rounded-xl text-xs text-white shadow-2xl">
+    <div class="flex items-center gap-2 pr-3 border-r border-slate-700">
+      <span id="connection-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span id="connection-text" class="font-medium text-slate-300">Live Channel Connected</span>
+    </div>
+
+    <!-- Backdrop mode toggle for testing -->
+    <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-lg">
+      <button id="btn-bg-transparent" title="Transparent (OBS/vMix)" class="px-2 py-1 rounded bg-slate-700 text-white font-medium hover:bg-slate-600 transition">OBS Transparent</button>
+      <button id="btn-bg-dark" title="Dark Stadium Studio" class="px-2 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Dark Test</button>
+      <button id="btn-bg-green" title="Chroma Green Screen" class="px-2 py-1 rounded text-slate-300 hover:text-white hover:bg-slate-700 transition">Green</button>
+    </div>
+
+    <!-- Sound cue toggle -->
+    <button id="btn-sound-toggle" title="Toggle Broadcast Whoosh Sound" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition">
+      <i data-lucide="volume-2" class="w-4 h-4"></i>
+    </button>
+
+    <!-- Fullscreen toggle -->
+    <button id="btn-fullscreen" title="Toggle Fullscreen (F11)" class="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition flex items-center gap-1.5">
+      <i data-lucide="maximize" class="w-4 h-4"></i>
+      <span>Fullscreen</span>
+    </button>
+  </div>
+
+  <!-- Safe Area Guide Grid (Optional helper for TV broadcast safe margin) -->
+  <div id="safe-area-guide" class="fixed inset-8 border border-dashed border-red-500/20 pointer-events-none hidden">
+    <span class="absolute top-2 left-2 text-[10px] text-red-500/40 uppercase tracking-widest font-mono">16:9 Broadcast Safe Area</span>
+  </div>
+
+  <!-- Main Broadcast Graphic Container -->
+  <div id="graphic-wrapper" class="broadcast-wrapper hidden">
+    <!-- Dynamic Graphic Inserted Here by display.js -->
+  </div>
+
+  <script src="display.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

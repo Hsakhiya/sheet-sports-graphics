@@ -1,0 +1,12 @@
+{
+  "name": "sheet-sports-graphics",
+  "version": "1.0.0",
+  "description": "Dual-window Google Sheets Sports Lower Third Graphics System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["sports", "graphics", "lower-third", "obs", "google-sheets", "broadcast"],
+  "author": "",
+  "license": "ISC"
+}

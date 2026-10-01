@@ -1,0 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700;1,800&family=Inter:wght@400;500;600;700;800&family=Teko:wght@500;600;700&display=swap');
+
+:root {
+  --primary: #e10600;
+  --secondary: #1a1e29;
+  --accent: #ffcc00;
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+  --glow-color: rgba(225, 6, 0, 0.4);
+}
+
+/* Theme definitions */
+[data-theme="espn-red"] {
+  --primary: #e10600;
+  --secondary: #11141c;
+  --accent: #ffb800;
+  --bg-banner: linear-gradient(135deg, #181d28 0%, #0e1118 100%);
+  --glow-color: rgba(225, 6, 0, 0.5);
+  --stripe-color: #e10600;
+}
+
+[data-theme="premier-league"] {
+  --primary: #00ff85;
+  --secondary: #38003c;
+  --accent: #e90052;
+  --bg-banner: linear-gradient(135deg, #38003c 0%, #200023 100%);
+  --glow-color: rgba(0, 255, 133, 0.4);
+  --stripe-color: #00ff85;
+}
+
+[data-theme="cyber-esports"] {
+  --primary: #00f0ff;
+  --secondary: #0a0e1a;
+  --accent: #ff0055;
+  --bg-banner: linear-gradient(135deg, #0d1527 0%, #060911 100%);
+  --glow-color: rgba(0, 240, 255, 0.5);
+  --stripe-color: #00f0ff;
+}
+
+[data-theme="champions-gold"] {
+  --primary: #d4af37;
+  --secondary: #061129;
+  --accent: #00a8ff;
+  --bg-banner: linear-gradient(135deg, #091a3e 0%, #040c1d 100%);
+  --glow-color: rgba(212, 175, 55, 0.4);
+  --stripe-color: #d4af37;
+}
+
+[data-theme="clean-dark"] {
+  --primary: #3b82f6;
+  --secondary: #18181b;
+  --accent: #10b981;
+  --bg-banner: linear-gradient(135deg, #27272a 0%, #18181b 100%);
+  --glow-color: rgba(59, 130, 246, 0.4);
+  --stripe-color: #3b82f6;
+}
+
+/* Custom Sports Font Classes */
+.font-sports {
+  font-family: 'Chakra Petch', sans-serif;
+}
+
+.font-num {
+  font-family: 'Teko', sans-serif;
+  letter-spacing: 0.05em;
+}
+
+/* Broadcast Skew effect */
+.skew-slant {
+  transform: skewX(-12deg);
+}
+
+.unskew {
+  transform: skewX(12deg);
+}
+
+/* Lower Third Animations */
+@keyframes slideInFromLeft {
+  0% {
+    transform: translate3d(-110%, 0, 0);
+    opacity: 0;
+  }
+  70% {
+    transform: translate3d(2%, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  0% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-115%, 0, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes popBadge {
+  0% {
+    transform: scale(0.6) rotate(-10deg);
+    opacity: 0;
+  }
+  80% {
+    transform: scale(1.08) rotate(2deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes statChipReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes livePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes alertGlow {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(225, 6, 0, 0.7), inset 0 0 15px rgba(225, 6, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 45px rgba(255, 60, 60, 0.9), inset 0 0 30px rgba(255, 0, 0, 0.5);
+  }
+}
+
+/* Animation trigger classes */
+.anim-enter {
+  animation: slideInFromLeft 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.anim-exit {
+  animation: slideOutToLeft 0.4s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.anim-badge-enter {
+  animation: popBadge 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+.anim-chip-1 {
+  animation: statChipReveal 0.4s ease 0.25s both;
+}
+.anim-chip-2 {
+  animation: statChipReveal 0.4s ease 0.35s both;
+}
+.anim-chip-3 {
+  animation: statChipReveal 0.4s ease 0.45s both;
+}
+.anim-chip-4 {
+  animation: statChipReveal 0.4s ease 0.55s both;
+}
+
+.live-indicator-pulse {
+  animation: livePulse 1.6s infinite ease-in-out;
+}
+
+.alert-pulse-glow {
+  animation: alertGlow 1.2s infinite ease-in-out;
+}
+
+/* Broadcast Lower Third Structural Styling */
+.broadcast-wrapper {
+  position: absolute;
+  bottom: calc(50px - var(--global-offset-y, 0px));
+  left: calc(60px + var(--global-offset-x, 0px));
+  max-width: 900px;
+  min-width: 580px;
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.65));
+  z-index: 100;
+  transition: left 0.15s ease-out, bottom 0.15s ease-out, opacity 0.3s ease;
+}
+
+/* Compact scale for small screens */
+@media (max-width: 768px) {
+  .broadcast-wrapper {
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    min-width: auto;
+    max-width: calc(100% - 40px);
+    transform-origin: bottom left;
+  }
+}
+
+/* Carbon & mesh texture overlays */
+.pattern-carbon {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 0);
+  background-size: 8px 8px;
+}
+
+.pattern-diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.03) 10px,
+    transparent 10px,
+    transparent 20px
+  );
+}
+
+/* Smooth custom scrollbar for tables */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111827;
+}
+::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}

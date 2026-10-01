@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="900" height="150" viewBox="0 0 900 150">
+  <defs>
+    <style type="text/css">
+      text {
+        font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+      }
+    </style>
+  </defs>
+
+  <!-- Background Base Plate -->
+  <rect id="bg-plate" x="10" y="10" width="880" height="130" rx="16" fill="#0f172a" stroke="#334155" stroke-width="2" />
+
+  <!-- Accent Color Left Strip -->
+  <path id="accent-bar" d="M 10 26 C 10 17 17 10 26 10 L 32 10 L 32 140 L 26 140 C 17 140 10 133 10 124 Z" fill="#00ff85" />
+
+  <!-- Photo Box -->
+  <g id="photo-container" transform="translate(48, 22)">
+    <rect width="106" height="106" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+    <!-- Fallback Silhouette -->
+    <circle cx="53" cy="40" r="20" fill="#475569" />
+    <path d="M 23,96 Q 53,65 83,96 Z" fill="#475569" />
+    <image id="player-photo" x="0" y="0" width="106" height="106" preserveAspectRatio="xMidYMin slice" xlink:href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+  </g>
+
+  <!-- Jersey Badge -->
+  <g id="jersey-container" transform="translate(172, 28)">
+    <rect id="jersey-badge" width="56" height="38" rx="8" fill="#00ff85" />
+    <text id="jersey-number" x="28" y="19" fill="#0f172a" font-size="22" font-weight="bold" text-anchor="middle" dominant-baseline="central">10</text>
+  </g>
+
+  <!-- Team / Subtitle -->
+  <text id="category-tag" x="242" y="44" fill="#00ff85" font-size="11" font-weight="bold" letter-spacing="1">LIVE TOURNAMENT</text>
+  <text id="team-name" x="242" y="60" fill="#94a3b8" font-size="14" font-weight="600">FC BARCELONA</text>
+
+  <!-- Player Name -->
+  <text id="player-name" x="172" y="104" fill="#ffffff" font-size="30" font-weight="800">LIONEL MESSI</text>
+
+  <!-- Stats -->
+  <g id="stat-1-group" transform="translate(560, 40)">
+    <rect width="90" height="70" rx="10" fill="#1e293b" />
+    <text id="stat-1-lbl" x="45" y="28" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">GOALS</text>
+    <text id="stat-1-val" x="45" y="55" fill="#ffffff" font-size="20" font-weight="bold" text-anchor="middle">24</text>
+  </g>
+
+  <g id="stat-2-group" transform="translate(665, 40)">
+    <rect width="90" height="70" rx="10" fill="#1e293b" />
+    <text id="stat-2-lbl" x="45" y="28" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">ASSISTS</text>
+    <text id="stat-2-val" x="45" y="55" fill="#ffffff" font-size="20" font-weight="bold" text-anchor="middle">12</text>
+  </g>
+
+  <g id="stat-3-group" transform="translate(770, 40)">
+    <rect width="90" height="70" rx="10" fill="#1e293b" />
+    <text id="stat-3-lbl" x="45" y="28" fill="#64748b" font-size="11" font-weight="bold" text-anchor="middle">RATING</text>
+    <text id="stat-3-val" x="45" y="55" fill="#00ff85" font-size="20" font-weight="bold" text-anchor="middle">9.4</text>
+  </g>
+</svg>

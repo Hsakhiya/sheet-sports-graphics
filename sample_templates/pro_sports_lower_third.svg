@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="960" height="180" viewBox="0 0 960 180">
+  <defs>
+    <style type="text/css">
+      @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700;800;900&amp;display=swap');
+      text {
+        font-family: 'Chakra Petch', 'Segoe UI', Arial, sans-serif;
+      }
+    </style>
+
+    <!-- Gradients -->
+    <linearGradient id="main-plate-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0e17" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#141a29" stop-opacity="0.98" />
+    </linearGradient>
+
+    <linearGradient id="badge-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e10600" />
+      <stop offset="100%" stop-color="#990000" />
+    </linearGradient>
+
+    <linearGradient id="stat-chip-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#182032" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#101522" stop-opacity="0.9" />
+    </linearGradient>
+
+    <!-- Clip path for photo -->
+    <clipPath id="photo-clip">
+      <polygon points="12,0 148,0 128,140 0,140" />
+    </clipPath>
+
+    <!-- Universal Drop Shadow (Compatible with Illustrator, Figma, Inkscape, Browsers) -->
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="6" />
+      <feOffset dx="0" dy="6" result="offsetblur" />
+      <feFlood flood-color="#000000" flood-opacity="0.6" />
+      <feComposite in2="offsetblur" operator="in" />
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Root Group with Universal Drop Shadow -->
+  <g id="broadcast-lower-third" filter="url(#shadow)">
+    <!-- Base Background Plate -->
+    <polygon id="bg-plate" points="30,24 940,24 910,170 10,170" fill="url(#main-plate-grad)" stroke="#2a354c" stroke-width="1.5" />
+
+    <!-- Top Accent Stripe Line -->
+    <polygon id="accent-stripe" points="32,24 938,24 936,28 30,28" fill="#e10600" />
+
+    <!-- Left Bold Accent Bar -->
+    <polygon id="accent-bar" points="10,170 30,24 38,24 18,170" fill="#e10600" />
+
+    <!-- Photo Container -->
+    <g id="photo-container" transform="translate(42, 26)">
+      <!-- Background / Frame -->
+      <polygon points="12,0 148,0 128,140 0,140" fill="#0d111a" stroke="#e10600" stroke-width="2" />
+      
+      <!-- Fallback Silhouette Avatar -->
+      <g id="player-photo-fallback">
+        <circle cx="70" cy="50" r="26" fill="#334155" />
+        <path d="M 30,120 Q 70,80 110,120 Z" fill="#334155" />
+      </g>
+
+      <!-- Dynamic Player Photo Layer (Compatible across all SVG viewers) -->
+      <image id="player-photo" clip-path="url(#photo-clip)" x="0" y="0" width="148" height="140" preserveAspectRatio="xMidYMin slice" xlink:href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+    </g>
+
+    <!-- Jersey Number Badge -->
+    <g id="jersey-container" transform="translate(178, 36)">
+      <polygon id="jersey-badge" points="4,0 64,0 52,48 0,48" fill="url(#badge-grad)" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3" />
+      <text id="jersey-number" x="30" y="24" fill="#ffffff" font-weight="900" font-size="28" text-anchor="middle" dominant-baseline="central">9</text>
+    </g>
+
+    <!-- Category Tag & Team Name -->
+    <g transform="translate(252, 44)">
+      <text id="category-tag" x="0" y="0" fill="#e10600" font-size="11" font-weight="800" letter-spacing="2">MATCHDAY ON-AIR</text>
+      <text id="team-name" x="0" y="20" fill="#94a3b8" font-size="15" font-weight="700" letter-spacing="1.5">REAL MADRID CF</text>
+    </g>
+
+    <!-- Athlete Name Layer -->
+    <text id="player-name" x="252" y="104" fill="#ffffff" font-weight="900" font-size="34" letter-spacing="1">KYLIAN MBAPPÉ</text>
+
+    <!-- Stat Chip 1 -->
+    <g id="stat-1-group" transform="translate(252, 118)">
+      <polygon id="stat-1-bg" points="4,0 120,0 112,42 0,42" fill="url(#stat-chip-grad)" stroke="#2a354c" stroke-width="1" />
+      <text id="stat-1-lbl" x="12" y="16" fill="#64748b" font-size="10" font-weight="700" letter-spacing="1">GOALS</text>
+      <text id="stat-1-val" x="12" y="34" fill="#ffffff" font-size="18" font-weight="900">18</text>
+    </g>
+
+    <!-- Stat Chip 2 -->
+    <g id="stat-2-group" transform="translate(380, 118)">
+      <polygon id="stat-2-bg" points="4,0 120,0 112,42 0,42" fill="url(#stat-chip-grad)" stroke="#2a354c" stroke-width="1" />
+      <text id="stat-2-lbl" x="12" y="16" fill="#64748b" font-size="10" font-weight="700" letter-spacing="1">ASSISTS</text>
+      <text id="stat-2-val" x="12" y="34" fill="#ffffff" font-size="18" font-weight="900">7</text>
+    </g>
+
+    <!-- Stat Chip 3 -->
+    <g id="stat-3-group" transform="translate(508, 118)">
+      <polygon id="stat-3-bg" points="4,0 120,0 112,42 0,42" fill="url(#stat-chip-grad)" stroke="#2a354c" stroke-width="1" />
+      <text id="stat-3-lbl" x="12" y="16" fill="#64748b" font-size="10" font-weight="700" letter-spacing="1">RATING</text>
+      <text id="stat-3-val" x="12" y="34" fill="#ffffff" font-size="18" font-weight="900">8.9</text>
+    </g>
+
+    <!-- Stat Chip 4 -->
+    <g id="stat-4-group" transform="translate(636, 118)">
+      <polygon id="stat-4-bg" points="4,0 130,0 122,42 0,42" fill="url(#stat-chip-grad)" stroke="#2a354c" stroke-width="1" />
+      <text id="stat-4-lbl" x="12" y="16" fill="#64748b" font-size="10" font-weight="700" letter-spacing="1">SPEED</text>
+      <text id="stat-4-val" x="12" y="34" fill="#ffffff" font-size="18" font-weight="900">36.2 km/h</text>
+    </g>
+  </g>
+</svg>
