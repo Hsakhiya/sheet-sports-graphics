@@ -270,8 +270,12 @@ function adjustColorBrightness(hex, percent) {
 // Render Custom SVG with Named Layer Reassignments & Dynamic Accent Colors
 function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, offsets = {}) {
   try {
+    let markup = String(svgMarkup || '');
+    if (!markup.includes('xmlns=')) {
+      markup = markup.replace(/<svg\b/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
     const parser = new DOMParser();
-    const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
+    const doc = parser.parseFromString(markup, 'image/svg+xml');
     const svgEl = doc.querySelector('svg');
     if (!svgEl) return '<div>Invalid SVG markup</div>';
 
@@ -351,6 +355,119 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
           textEl.style.setProperty('baseline-shift', '0', 'important');
         }
       }
+    }
+
+    // Auto-clip images to their container shape & rounded corners
+    const images = svgEl.querySelectorAll('image');
+    if (images.length > 0) {
+      let defs = svgEl.querySelector('defs');
+      if (!defs) {
+        defs = doc.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svgEl.insertBefore(defs, svgEl.firstChild);
+      }
+
+      images.forEach((imgEl, imgIdx) => {
+        const container = imgEl.closest('g') || imgEl.parentElement || svgEl;
+        const candidateShapes = Array.from(container.querySelectorAll('rect, polygon, circle, ellipse, path'))
+          .filter(shape => {
+            if (shape.closest('clipPath') || shape.closest('defs')) return false;
+            const sId = (shape.id || '').toLowerCase();
+            const pId = (shape.parentElement?.id || '').toLowerCase();
+            if (sId.includes('fallback') || pId.includes('fallback') || sId.includes('silhouette')) return false;
+            return true;
+          });
+
+        let bestShape = null;
+        let bestScore = -1;
+
+        candidateShapes.forEach(shape => {
+          let score = 0;
+          const tag = shape.tagName.toLowerCase();
+          const id = (shape.id || '').toLowerCase();
+          const cls = (shape.getAttribute('class') || '').toLowerCase();
+
+          if (id.includes('frame') || id.includes('bg') || id.includes('plate') || id.includes('badge') || id.includes('box') || id.includes('container') || id.includes('photo')) score += 10;
+          if (cls.includes('frame') || cls.includes('bg') || cls.includes('plate')) score += 5;
+          if (shape.hasAttribute('rx') || shape.hasAttribute('ry')) score += 15;
+
+          if (tag === 'rect') {
+            const sw = parseFloat(shape.getAttribute('width') || 0);
+            const sh = parseFloat(shape.getAttribute('height') || 0);
+            const iw = parseFloat(imgEl.getAttribute('width') || 0);
+            const ih = parseFloat(imgEl.getAttribute('height') || 0);
+            if (iw > 0 && Math.abs(sw - iw) < 25) score += 10;
+            if (ih > 0 && Math.abs(sh - ih) < 25) score += 10;
+            score += 5;
+          } else if (tag === 'polygon' || tag === 'circle' || tag === 'ellipse') {
+            score += 5;
+          }
+
+          if (id.includes('silhouette') || id.includes('fallback') || id.includes('icon')) score -= 20;
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestShape = shape;
+          }
+        });
+
+        if (bestShape) {
+          const imgId = imgEl.id || `img-${imgIdx}`;
+          const clipId = `auto-clip-${imgId}`;
+          let clipPathEl = svgEl.getElementById(clipId);
+          if (!clipPathEl) {
+            clipPathEl = doc.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+            clipPathEl.setAttribute('id', clipId);
+            defs.appendChild(clipPathEl);
+          } else {
+            clipPathEl.innerHTML = '';
+          }
+
+          const tag = bestShape.tagName.toLowerCase();
+          if (tag === 'rect') {
+            const clipRect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const x = bestShape.getAttribute('x') || imgEl.getAttribute('x') || '0';
+            const y = bestShape.getAttribute('y') || imgEl.getAttribute('y') || '0';
+            const w = bestShape.getAttribute('width') || imgEl.getAttribute('width') || '100';
+            const h = bestShape.getAttribute('height') || imgEl.getAttribute('height') || '100';
+
+            let rx = bestShape.getAttribute('rx') || bestShape.style.rx;
+            let ry = bestShape.getAttribute('ry') || bestShape.style.ry;
+
+            clipRect.setAttribute('x', x);
+            clipRect.setAttribute('y', y);
+            clipRect.setAttribute('width', w);
+            clipRect.setAttribute('height', h);
+            if (rx) clipRect.setAttribute('rx', rx);
+            if (ry) clipRect.setAttribute('ry', ry || rx);
+
+            clipPathEl.appendChild(clipRect);
+          } else if (tag === 'polygon') {
+            const clipPoly = doc.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            clipPoly.setAttribute('points', bestShape.getAttribute('points') || '');
+            clipPathEl.appendChild(clipPoly);
+          } else if (tag === 'circle') {
+            const clipCircle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            clipCircle.setAttribute('cx', bestShape.getAttribute('cx') || '0');
+            clipCircle.setAttribute('cy', bestShape.getAttribute('cy') || '0');
+            clipCircle.setAttribute('r', bestShape.getAttribute('r') || '0');
+            clipPathEl.appendChild(clipCircle);
+          } else if (tag === 'ellipse') {
+            const clipEllipse = doc.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            clipEllipse.setAttribute('cx', bestShape.getAttribute('cx') || '0');
+            clipEllipse.setAttribute('cy', bestShape.getAttribute('cy') || '0');
+            clipEllipse.setAttribute('rx', bestShape.getAttribute('rx') || '0');
+            clipEllipse.setAttribute('ry', bestShape.getAttribute('ry') || '0');
+            clipPathEl.appendChild(clipEllipse);
+          } else if (tag === 'path') {
+            const clipPathShape = doc.createElementNS('http://www.w3.org/2000/svg', 'path');
+            clipPathShape.setAttribute('d', bestShape.getAttribute('d') || '');
+            clipPathEl.appendChild(clipPathShape);
+          }
+
+          imgEl.setAttribute('clip-path', `url(#${clipId})`);
+          imgEl.style.clipPath = `url(#${clipId})`;
+        }
+      });
     }
 
     // Apply dynamic accent color if provided

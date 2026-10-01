@@ -6,6 +6,9 @@
         font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
       }
     </style>
+    <clipPath id="photo-clip-minimal">
+      <rect width="106" height="106" rx="12" ry="12" />
+    </clipPath>
   </defs>
 
   <!-- Background Base Plate -->
@@ -20,7 +23,7 @@
     <!-- Fallback Silhouette -->
     <circle cx="53" cy="40" r="20" fill="#475569" />
     <path d="M 23,96 Q 53,65 83,96 Z" fill="#475569" />
-    <image id="player-photo" x="0" y="0" width="106" height="106" preserveAspectRatio="xMidYMin slice" xlink:href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+    <image id="player-photo" clip-path="url(#photo-clip-minimal)" x="0" y="0" width="106" height="106" preserveAspectRatio="xMidYMin slice" xlink:href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" href="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
   </g>
 
   <!-- Jersey Badge -->
