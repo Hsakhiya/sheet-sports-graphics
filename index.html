@@ -268,8 +268,8 @@
 
     </div>
 
-    <!-- Middle Column: Broadcast Controls, SVG Studio & Inspector (4 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-4 flex flex-col gap-5">
+    <!-- Middle Column: Broadcast Controls & SVG Studio (3 Cols on xl) -->
+    <div class="lg:col-span-6 xl:col-span-3 flex flex-col gap-5">
 
       <!-- Live Broadcast Master Control Bar -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -403,7 +403,79 @@
         </div>
       </section>
 
-      <!-- Element Position & Alignment (X, Y) Inspector Panel -->
+    </div>
+
+    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Position Inspector (4 Cols on xl) -->
+    <div class="lg:col-span-6 xl:col-span-4 flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
+
+      <!-- Simulated On-Air Live Preview Canvas -->
+      <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-500">
+              <i data-lucide="monitor" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="font-sports font-bold text-sm tracking-wider uppercase text-slate-200">Live Preview</h2>
+              <p class="text-[11px] text-slate-400">Confidence Program Monitor</p>
+            </div>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-800">16:9 HD</span>
+        </div>
+
+        <!-- Simulated Broadcast Screen Container -->
+        <div class="relative w-full aspect-video rounded-xl bg-slate-950 border border-slate-800/90 overflow-hidden shadow-2xl flex flex-col justify-end p-3 bg-cover bg-center" style="background-image: radial-gradient(circle at center, #1a2234 0%, #090d14 100%);">
+          <!-- Background TV guide watermark -->
+          <div class="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none opacity-60">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            <span class="text-[10px] font-sports font-bold uppercase tracking-widest text-slate-400">PROGRAM FEED</span>
+          </div>
+
+          <!-- Mini Lower Third Render Area -->
+          <div id="preview-render-area" class="w-full transition-all duration-300">
+            <!-- Simulated Lower Third injected here -->
+          </div>
+        </div>
+
+        <!-- Quick Manual Push -->
+        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-sports font-bold uppercase tracking-wider text-slate-400">Quick Manual Push</span>
+            <span class="text-[10px] text-slate-500 font-sans">Direct overlay feed</span>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="manual-name" placeholder="Title / Athlete Name" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+              <input type="text" id="manual-team" placeholder="Team / Subtitle" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+            </div>
+            <button id="btn-manual-push" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase rounded-lg py-2 transition shadow-md active:scale-95">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>Take Now (Manual Push)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- OBS Broadcast Feed Quick Helper -->
+        <div class="mt-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
+          <div class="flex items-center justify-between text-slate-400 mb-1">
+            <span class="font-sports font-semibold text-[11px] uppercase tracking-wider flex items-center gap-1.5 text-slate-300">
+              <i data-lucide="video" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>OBS / vMix Source</span>
+            </span>
+            <span class="text-[10px] font-mono text-emerald-400">1920 × 1080</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">Add a Browser Source pointing to your graphics feed:</p>
+          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+            <code id="obs-url-code" class="text-[10px] font-mono text-slate-300 flex-1 truncate select-all">http://localhost:3000/display.html</code>
+            <button type="button" onclick="navigator.clipboard.writeText(window.location.origin + '/display.html'); const s=this.querySelector('span'); s.textContent='Copied!'; setTimeout(()=>s.textContent='Copy', 1500);" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-medium transition flex items-center gap-1 shrink-0">
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Element Position & Alignment (X, Y) Inspector Panel (Under Preview) -->
       <section id="element-position-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
@@ -516,78 +588,6 @@
               </button>
               <div></div>
             </div>
-          </div>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Output (3 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-3 flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
-
-      <!-- Simulated On-Air Live Preview Canvas -->
-      <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-500">
-              <i data-lucide="monitor" class="w-4 h-4"></i>
-            </div>
-            <div>
-              <h2 class="font-sports font-bold text-sm tracking-wider uppercase text-slate-200">Live Preview</h2>
-              <p class="text-[11px] text-slate-400">Confidence Program Monitor</p>
-            </div>
-          </div>
-          <span class="text-[11px] text-slate-400 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-800">16:9 HD</span>
-        </div>
-
-        <!-- Simulated Broadcast Screen Container -->
-        <div class="relative w-full aspect-video rounded-xl bg-slate-950 border border-slate-800/90 overflow-hidden shadow-2xl flex flex-col justify-end p-3 bg-cover bg-center" style="background-image: radial-gradient(circle at center, #1a2234 0%, #090d14 100%);">
-          <!-- Background TV guide watermark -->
-          <div class="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none opacity-60">
-            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            <span class="text-[10px] font-sports font-bold uppercase tracking-widest text-slate-400">PROGRAM FEED</span>
-          </div>
-
-          <!-- Mini Lower Third Render Area -->
-          <div id="preview-render-area" class="w-full transition-all duration-300">
-            <!-- Simulated Lower Third injected here -->
-          </div>
-        </div>
-
-        <!-- Quick Manual Push -->
-        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-sports font-bold uppercase tracking-wider text-slate-400">Quick Manual Push</span>
-            <span class="text-[10px] text-slate-500 font-sans">Direct overlay feed</span>
-          </div>
-          <div class="flex flex-col gap-2">
-            <div class="grid grid-cols-2 gap-2">
-              <input type="text" id="manual-name" placeholder="Title / Athlete Name" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
-              <input type="text" id="manual-team" placeholder="Team / Subtitle" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
-            </div>
-            <button id="btn-manual-push" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase rounded-lg py-2 transition shadow-md active:scale-95">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-              <span>Take Now (Manual Push)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- OBS Broadcast Feed Quick Helper -->
-        <div class="mt-3 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
-          <div class="flex items-center justify-between text-slate-400 mb-1">
-            <span class="font-sports font-semibold text-[11px] uppercase tracking-wider flex items-center gap-1.5 text-slate-300">
-              <i data-lucide="video" class="w-3.5 h-3.5 text-emerald-400"></i>
-              <span>OBS / vMix Source</span>
-            </span>
-            <span class="text-[10px] font-mono text-emerald-400">1920 × 1080</span>
-          </div>
-          <p class="text-[11px] text-slate-500 mb-2 leading-relaxed">Add a Browser Source pointing to your graphics feed:</p>
-          <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
-            <code id="obs-url-code" class="text-[10px] font-mono text-slate-300 flex-1 truncate select-all">http://localhost:3000/display.html</code>
-            <button type="button" onclick="navigator.clipboard.writeText(window.location.origin + '/display.html'); const s=this.querySelector('span'); s.textContent='Copied!'; setTimeout(()=>s.textContent='Copy', 1500);" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-[10px] font-medium transition flex items-center gap-1 shrink-0">
-              <i data-lucide="copy" class="w-3 h-3"></i>
-              <span>Copy</span>
-            </button>
           </div>
         </div>
       </section>
