@@ -4,21 +4,31 @@ A dual-window live broadcast graphics application that connects directly to Goog
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start & Multi-Device Access
 
+### Option A: Local & Multi-Device on Wi-Fi
 1. Open your terminal in this directory:
    ```bash
    node server.js
    ```
-2. Open your browser:
-   - **Control Room Operator Desk**: [http://localhost:3000/index.html](http://localhost:3000/index.html)
-   - **Display Window (Full Screen / OBS)**: [http://localhost:3000/display.html](http://localhost:3000/display.html)
+2. **Access from this PC**:
+   - Operator Desk: [http://localhost:3000](http://localhost:3000)
+   - Display / OBS: [http://localhost:3000/display.html](http://localhost:3000/display.html)
 
-Or simply click the **"Pop Out Display Window"** button inside the Operator Desk!
+3. **Access from other Devices (Phone, Tablet, Secondary Laptop, or OBS)**:
+   - Make sure both devices are on the same Wi-Fi network.
+   - Look at the terminal output or click **"Connect Devices (QR)"** in the top navigation bar to get your local network IP (e.g. `http://192.168.1.8:3000`).
+   - Scan the QR code with your mobile camera to open and control graphics right from your phone or iPad!
+   - Real-time changes sync instantly across all devices using Server-Sent Events (SSE).
+
+### Option B: 24/7 Cloud Deployment (Worldwide Access)
+Deploy to the cloud for free with 1 click:
+- [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Hsakhiya/sheet-sports-graphics)
+- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/git/external?repository-url=https://github.com/Hsakhiya/sheet-sports-graphics)
 
 ---
 
-## 🖥️ Dual-Window Workflow
+## 🖥️ Dual-Window & Multi-Device Workflow
 
 ```
 +------------------------------------+         +-------------------------------------+

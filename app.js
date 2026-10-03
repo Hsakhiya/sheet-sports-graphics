@@ -349,16 +349,28 @@ async function resolveAccentColor(mapped, theme) {
 // -------------------------------------------------------------
 function sendToDisplay(action, payload = {}) {
   const message = { action, payload, timestamp: Date.now() };
-  channel.postMessage(message);
 
-  // Cross-window fallback via LocalStorage
+  // 1. Same-device local BroadcastChannel
+  try { channel.postMessage(message); } catch (e) {}
+
+  // 2. Cross-window fallback via LocalStorage
   try {
     localStorage.setItem('sports_graphic_event', JSON.stringify(message));
+  } catch (e) {}
+
+  // 3. Cross-device Real-Time Network / Cloud Broadcast
+  try {
+    fetch('/api/broadcast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message)
+    }).catch(() => {});
   } catch (e) {}
 }
 
 let lastPongTime = 0;
 
+// Listen to local BroadcastChannel
 channel.onmessage = (event) => {
   const { action } = event.data || {};
   if (action === 'PONG') {
@@ -366,6 +378,32 @@ channel.onmessage = (event) => {
     markDisplayConnected(true);
   }
 };
+
+// Listen to network Server-Sent Events (SSE) for remote device handshakes
+function initDeskNetworkSync() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const sse = new EventSource('/api/events');
+    sse.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.action === 'PONG') {
+          lastPongTime = Date.now();
+          markDisplayConnected(true);
+        } else if (data.action === 'DEVICE_COUNT') {
+          const count = data.payload?.count || 0;
+          if (count > 0 && !isDisplayConnected) {
+            markDisplayConnected(true);
+          }
+        }
+      } catch (err) {}
+    };
+    sse.onopen = () => {
+      sendToDisplay('PING');
+    };
+  } catch (err) {}
+}
+initDeskNetworkSync();
 
 function markDisplayConnected(connected) {
   isDisplayConnected = connected;
@@ -380,10 +418,10 @@ function markDisplayConnected(connected) {
   }
 }
 
-// Ping display periodically and check heartbeat
+// Ping display periodically and check heartbeat across all channels
 setInterval(() => {
-  channel.postMessage({ action: 'PING' });
-  if (lastPongTime > 0 && Date.now() - lastPongTime > 7000) {
+  sendToDisplay('PING');
+  if (lastPongTime > 0 && Date.now() - lastPongTime > 9000) {
     markDisplayConnected(false);
   }
 }, 3000);
@@ -2201,4 +2239,74 @@ fetch(`sample_templates/pro_sports_lower_third.svg?t=${Date.now()}`)
     }
   })
   .catch(e => console.warn('Could not load initial SVG template:', e));
+
+// -------------------------------------------------------------
+// Multi-Device & Cloud Connection Modal Controller
+// -------------------------------------------------------------
+const btnDeviceModal = document.getElementById('btn-device-modal');
+const deviceConnectModal = document.getElementById('device-connect-modal');
+const btnCloseDeviceModal = document.getElementById('btn-close-device-modal');
+const netDeskUrlInput = document.getElementById('net-desk-url');
+const netDisplayUrlInput = document.getElementById('net-display-url');
+const deviceQrCodeImg = document.getElementById('device-qr-code');
+
+async function openDeviceModal() {
+  if (!deviceConnectModal) return;
+  deviceConnectModal.classList.remove('hidden');
+
+  let baseOrigin = window.location.origin;
+
+  // Try querying server for local network IPs if currently on localhost
+  try {
+    const res = await fetch('/api/network-info');
+    if (res.ok) {
+      const info = await res.json();
+      if (info.localIps && info.localIps.length > 0) {
+        const ip = info.localIps[0];
+        baseOrigin = `http://${ip}:${info.port || 3000}`;
+      }
+    }
+  } catch (e) {
+    console.warn('Network info unavailable, using window origin:', e);
+  }
+
+  const deskUrl = `${baseOrigin}/index.html`;
+  const displayUrl = `${baseOrigin}/display.html`;
+
+  if (netDeskUrlInput) netDeskUrlInput.value = deskUrl;
+  if (netDisplayUrlInput) netDisplayUrlInput.value = displayUrl;
+
+  // Generate dynamic QR code for instant mobile camera scan
+  if (deviceQrCodeImg) {
+    deviceQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(deskUrl)}&color=0-0-0&bgcolor=255-255-255`;
+  }
+}
+
+btnDeviceModal?.addEventListener('click', openDeviceModal);
+btnCloseDeviceModal?.addEventListener('click', () => {
+  deviceConnectModal?.classList.add('hidden');
+});
+deviceConnectModal?.addEventListener('click', (e) => {
+  if (e.target === deviceConnectModal) {
+    deviceConnectModal.classList.add('hidden');
+  }
+});
+
+// Copy button handlers inside modal
+document.querySelectorAll('.btn-copy-input').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    navigator.clipboard.writeText(input.value).then(() => {
+      const originalText = btn.textContent;
+      btn.textContent = 'Copied!';
+      btn.classList.add('bg-emerald-600');
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.classList.remove('bg-emerald-600');
+      }, 1500);
+    });
+  });
+});
 

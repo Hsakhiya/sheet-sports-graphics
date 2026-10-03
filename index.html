@@ -81,6 +81,12 @@
         <span>Copy OBS URL</span>
       </button>
 
+      <!-- Multi-Device Network Connect Button -->
+      <button id="btn-device-modal" title="Connect Phone, iPad, or Remote OBS on Wi-Fi or Cloud" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
+        <span>Connect Devices (QR)</span>
+      </button>
+
       <!-- Launch Display Window Button -->
       <button id="btn-open-display" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-sports font-bold tracking-wider uppercase shadow-lg shadow-red-600/20 transition active:scale-95">
         <i data-lucide="external-link" class="w-4 h-4"></i>
@@ -956,6 +962,81 @@
           </div>
         </div>
       </aside>
+    </div>
+  <!-- Multi-Device & Cloud Connection Modal -->
+  <div id="device-connect-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0f141f] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <i data-lucide="network" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-sports font-bold text-white text-sm tracking-wide">CONNECT DEVICES & CLOUD DEPLOYMENT</h3>
+            <p class="text-[11px] text-slate-400">Control graphics from mobile, tablet, or OBS on any device</p>
+          </div>
+        </div>
+        <button id="btn-close-device-modal" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <!-- 1. Wi-Fi Local Network Access with QR Code -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-cyan-400 block mb-1">Option 1: Wi-Fi / Local Studio Network</span>
+          <p class="text-xs text-slate-300 mb-3">Scan this QR code with your phone or tablet camera to immediately open and control graphics in real-time:</p>
+
+          <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+            <!-- QR Code Image -->
+            <div class="shrink-0 bg-white p-2 rounded-lg shadow-md flex items-center justify-center">
+              <img id="device-qr-code" src="" alt="Scan QR Code to open on mobile" class="w-28 h-28 object-contain">
+            </div>
+            <!-- URLs & Copy -->
+            <div class="flex-1 w-full space-y-2">
+              <div>
+                <label class="text-[10px] text-slate-400 block font-sports">Mobile Operator Desk URL:</label>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <input id="net-desk-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-cyan-300 select-all">
+                  <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-desk-url">Copy</button>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block font-sports">OBS / Display Window URL:</label>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <input id="net-display-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-emerald-300 select-all">
+                  <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-display-url">Copy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Free 24/7 Cloud Deployment -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
+          <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-amber-400 block mb-1">Option 2: 24/7 Cloud Hosting (Worldwide Access)</span>
+          <p class="text-xs text-slate-300 mb-3">Deploy your repository with 1 click to get a permanent HTTPS public link accessible anywhere from any cellular or Wi-Fi network:</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <a href="https://render.com/deploy?repo=https://github.com/Hsakhiya/sheet-sports-graphics" target="_blank" class="flex items-center gap-2.5 p-3 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-sports font-bold text-white transition group">
+              <i data-lucide="cloud" class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition"></i>
+              <div>
+                <div>Deploy to Render (Free)</div>
+                <div class="text-[10px] text-slate-400 font-normal font-sans">Full Node.js + persistent SSE</div>
+              </div>
+            </a>
+            <a href="https://vercel.com/new/git/external?repository-url=https://github.com/Hsakhiya/sheet-sports-graphics" target="_blank" class="flex items-center gap-2.5 p-3 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-xs font-sports font-bold text-white transition group">
+              <i data-lucide="triangle" class="w-4 h-4 text-cyan-400 group-hover:scale-110 transition"></i>
+              <div>
+                <div>Deploy to Vercel (Free)</div>
+                <div class="text-[10px] text-slate-400 font-normal font-sans">Fast Global Edge Network</div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

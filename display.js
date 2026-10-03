@@ -903,10 +903,10 @@ function hideGraphic() {
   }, 420);
 }
 
-// Handle Incoming Broadcast Messages
-channel.onmessage = (event) => {
-  const { action, payload } = event.data || {};
-  console.log('[Display] Received message:', action, payload);
+// Unified Broadcast Action Handler (Handles local bus, storage events, and network SSE)
+function handleGraphicAction(action, payload) {
+  if (!action) return;
+  console.log('[Display] Action:', action, payload);
 
   switch (action) {
     case 'TAKE':
@@ -919,6 +919,13 @@ channel.onmessage = (event) => {
 
     case 'PING':
       channel.postMessage({ action: 'PONG', timestamp: Date.now() });
+      try {
+        fetch('/api/broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'PONG', timestamp: Date.now() })
+        }).catch(() => {});
+      } catch (e) {}
       break;
 
     case 'SET_THEME':
@@ -944,34 +951,57 @@ channel.onmessage = (event) => {
       }
       break;
   }
+}
+
+// 1. Listen to Local BroadcastChannel
+channel.onmessage = (event) => {
+  const { action, payload } = event.data || {};
+  handleGraphicAction(action, payload);
 };
 
-// Also listen to localStorage storage events for cross-window fallback
+// 2. Listen to LocalStorage Storage Events (cross-window fallback)
 window.addEventListener('storage', (e) => {
   if (e.key === 'sports_graphic_event' && e.newValue) {
     try {
       const { action, payload } = JSON.parse(e.newValue);
-      if (action === 'TAKE') showGraphic(payload);
-      if (action === 'CLEAR') hideGraphic();
-      if (action === 'UPDATE_OFFSETS' && payload && payload.elementOffsets) {
-        applyGlobalGraphicOffset(payload.elementOffsets);
-        if (currentGraphicPayload) {
-          currentGraphicPayload.elementOffsets = payload.elementOffsets;
-          if (currentGraphicPayload.template === 'custom_svg' && currentGraphicPayload.svgMarkup && !wrapper.classList.contains('hidden')) {
-            wrapper.innerHTML = renderCustomSvgHTML(
-              currentGraphicPayload.svgMarkup,
-              currentGraphicPayload.layerValues || {},
-              currentGraphicPayload.accentColor,
-              payload.elementOffsets
-            );
-          }
-        }
-      }
+      handleGraphicAction(action, payload);
     } catch (err) {
       console.warn('Storage event parse error:', err);
     }
   }
 });
+
+// 3. Connect to Cross-Device Real-Time SSE Stream (/api/events)
+function initNetworkSseSync() {
+  if (typeof EventSource === 'undefined') return;
+  try {
+    const sse = new EventSource('/api/events');
+    sse.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data && data.action) {
+          handleGraphicAction(data.action, data.payload);
+        }
+      } catch (err) {
+        console.warn('SSE message parse error:', err);
+      }
+    };
+    sse.onopen = () => {
+      console.log('📡 Connected to Cross-Device Real-Time Broadcast Server');
+      // Announce display is ready to all devices
+      try {
+        fetch('/api/broadcast', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'PONG', timestamp: Date.now() })
+        }).catch(() => {});
+      } catch (e) {}
+    };
+  } catch (err) {
+    console.warn('SSE initialization error:', err);
+  }
+}
+initNetworkSseSync();
 
 // Load persistent offsets on boot
 try {
