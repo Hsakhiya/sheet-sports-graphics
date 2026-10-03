@@ -2253,6 +2253,11 @@ const deviceQrCodeImg = document.getElementById('device-qr-code');
 async function openDeviceModal() {
   if (!deviceConnectModal) return;
   deviceConnectModal.classList.remove('hidden');
+  deviceConnectModal.style.display = 'flex';
+
+  if (window.lucide && window.lucide.createIcons) {
+    window.lucide.createIcons();
+  }
 
   let baseOrigin = window.location.origin;
 
@@ -2282,13 +2287,25 @@ async function openDeviceModal() {
   }
 }
 
-btnDeviceModal?.addEventListener('click', openDeviceModal);
-btnCloseDeviceModal?.addEventListener('click', () => {
-  deviceConnectModal?.classList.add('hidden');
+function closeDeviceModal() {
+  if (!deviceConnectModal) return;
+  deviceConnectModal.classList.add('hidden');
+  deviceConnectModal.style.display = 'none';
+}
+
+btnDeviceModal?.addEventListener('click', (e) => {
+  e.preventDefault();
+  openDeviceModal();
 });
+btnCloseDeviceModal?.addEventListener('click', closeDeviceModal);
 deviceConnectModal?.addEventListener('click', (e) => {
   if (e.target === deviceConnectModal) {
-    deviceConnectModal.classList.add('hidden');
+    closeDeviceModal();
+  }
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && deviceConnectModal && !deviceConnectModal.classList.contains('hidden')) {
+    closeDeviceModal();
   }
 });
 
