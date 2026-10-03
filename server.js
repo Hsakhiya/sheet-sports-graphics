@@ -81,9 +81,17 @@ function handleRequest(req, res) {
     res.write(': keep-alive\n\n');
     sseClients.add(res);
 
-    // If there is an active on-air graphic, immediately hydrate the newly connected display / OBS
+    // If there is an active on-air graphic, immediately hydrate the newly connected display / OBS (without replaying swoosh)
     if (lastGraphicState) {
-      res.write(`data: ${JSON.stringify(lastGraphicState)}\n\n`);
+      const hydrationState = {
+        ...lastGraphicState,
+        payload: {
+          ...(lastGraphicState.payload || {}),
+          emitAudio: false,
+          isHydration: true
+        }
+      };
+      res.write(`data: ${JSON.stringify(hydrationState)}\n\n`);
     }
 
     // If there is active roster data, hydrate the newly connected mobile switcher
@@ -117,6 +125,11 @@ function handleRequest(req, res) {
       try {
         const message = JSON.parse(body);
 
+        // Ensure msgId exists for end-to-end deduplication
+        if (!message.msgId) {
+          message.msgId = `${message.action || 'msg'}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        }
+
         // Update persistent state for new displays
         if (message.action === 'TAKE' || message.action === 'CLEAR') {
           lastGraphicState = message;
@@ -131,7 +144,7 @@ function handleRequest(req, res) {
         broadcastToSseClients(message);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, recipients: sseClients.size }));
+        res.end(JSON.stringify({ ok: true, recipients: sseClients.size, msgId: message.msgId }));
       } catch (err) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Invalid JSON payload' }));

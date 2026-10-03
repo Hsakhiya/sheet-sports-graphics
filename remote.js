@@ -200,7 +200,18 @@
   // -----------------------------------------------------------
   // 5. Broadcast Execution: TAKE and CLEAR
   // -----------------------------------------------------------
+  let lastRemoteTakeIndex = null;
+  let lastRemoteTakeTime = 0;
+  let lastRemoteClearTime = 0;
+
   function triggerPlayerTake(index) {
+    const now = Date.now();
+    if (lastRemoteTakeIndex === index && (now - lastRemoteTakeTime) < 600) {
+      return;
+    }
+    lastRemoteTakeIndex = index;
+    lastRemoteTakeTime = now;
+
     if (navigator.vibrate) {
       navigator.vibrate(35); // Haptic feedback
     }
@@ -209,19 +220,29 @@
     activeIndex = index;
     renderPlayers();
 
+    const msgId = `REMOTE_TAKE_${now}_${Math.random().toString(36).substring(2, 9)}`;
+
     // Broadcast command to server, desktop operator desk, and OBS
     fetch('/api/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        msgId,
         action: 'REMOTE_TAKE',
         payload: { index },
-        timestamp: Date.now()
+        timestamp: now
       })
     }).catch(err => console.warn('Broadcast failed:', err));
   }
 
   function triggerClear() {
+    const now = Date.now();
+    if (activeIndex === null && (now - lastRemoteClearTime) < 500) {
+      return;
+    }
+    lastRemoteClearTime = now;
+    lastRemoteTakeIndex = null;
+
     if (navigator.vibrate) {
       navigator.vibrate([20, 40, 20]); // Double tap haptic
     }
@@ -230,12 +251,15 @@
     activeIndex = null;
     renderPlayers();
 
+    const msgId = `REMOTE_CLEAR_${now}_${Math.random().toString(36).substring(2, 9)}`;
+
     fetch('/api/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        msgId,
         action: 'REMOTE_CLEAR',
-        timestamp: Date.now()
+        timestamp: now
       })
     }).catch(err => console.warn('Clear failed:', err));
   }

@@ -870,11 +870,15 @@ function showGraphic(payload) {
     wrapper.innerHTML = buildGraphicHTML(template, data);
   }
 
-  // Animate Entrance
+  // Animate Entrance cleanly
   wrapper.classList.remove('hidden', 'anim-exit');
+  wrapper.classList.remove('anim-enter');
+  void wrapper.offsetWidth; // Force CSS reflow to ensure clean animation execution
   wrapper.classList.add('anim-enter');
 
-  playBroadcastSwoosh();
+  if (payload.emitAudio !== false) {
+    playBroadcastSwoosh();
+  }
 
   // Auto-hide if duration specified
   if (holdDuration > 0) {
@@ -885,8 +889,13 @@ function showGraphic(payload) {
 }
 
 // Display Action: Clear / Hide Graphic
+let isHidingGraphic = false;
+
 function hideGraphic() {
-  if (wrapper.classList.contains('hidden')) return;
+  if (wrapper.classList.contains('hidden') && !wrapper.classList.contains('anim-enter')) return;
+  if (isHidingGraphic) return;
+
+  isHidingGraphic = true;
 
   if (hideTimer) {
     clearTimeout(hideTimer);
@@ -900,31 +909,73 @@ function hideGraphic() {
     wrapper.classList.add('hidden');
     wrapper.classList.remove('anim-exit');
     wrapper.innerHTML = '';
+    isHidingGraphic = false;
   }, 420);
 }
 
-// Unified Broadcast Action Handler (Handles local bus, storage events, and network SSE)
-function handleGraphicAction(action, payload) {
+// -------------------------------------------------------------
+// Unified Broadcast Action Handler & Multi-Transport Deduplicator
+// -------------------------------------------------------------
+const seenMessageIds = new Set();
+let lastTakeKey = '';
+let lastTakeTimestamp = 0;
+let lastClearTimestamp = 0;
+
+function handleGraphicAction(action, payload = {}, msgId = null, timestamp = null) {
   if (!action) return;
-  console.log('[Display] Action:', action, payload);
+
+  const currentMsgId = msgId || payload?.msgId;
+
+  // 1. Exact Message ID Deduplication across transports (BroadcastChannel, LocalStorage, SSE)
+  if (currentMsgId) {
+    if (seenMessageIds.has(currentMsgId)) {
+      console.log('[Display] Dropping duplicate message by ID:', currentMsgId);
+      return;
+    }
+    seenMessageIds.add(currentMsgId);
+    if (seenMessageIds.size > 200) {
+      const oldest = seenMessageIds.values().next().value;
+      seenMessageIds.delete(oldest);
+    }
+  }
+
+  const now = Date.now();
 
   switch (action) {
-    case 'TAKE':
+    case 'TAKE': {
+      const data = payload?.data || {};
+      const takeKey = `${payload?.template || ''}::${payload?.rowIndex ?? ''}::${data.name || ''}::${data.subtitle || ''}::${payload?.theme || ''}`;
+
+      // 2. Debounce Identical TAKE Actions within 650ms (prevents double audio and animation replay)
+      if (takeKey === lastTakeKey && (now - lastTakeTimestamp) < 650) {
+        console.log('[Display] Debouncing duplicate TAKE action within 650ms:', takeKey);
+        return;
+      }
+
+      lastTakeKey = takeKey;
+      lastTakeTimestamp = now;
+      isHidingGraphic = false;
+
       showGraphic(payload);
       break;
+    }
 
-    case 'CLEAR':
+    case 'CLEAR': {
+      if ((now - lastClearTimestamp) < 500) {
+        return; // Ignore duplicate clear within 500ms
+      }
+      if (wrapper.classList.contains('hidden') && !isHidingGraphic) {
+        return; // Already cleared
+      }
+      lastClearTimestamp = now;
+      lastTakeKey = '';
       hideGraphic();
       break;
+    }
 
     case 'PING':
-      channel.postMessage({ action: 'PONG', timestamp: Date.now() });
       try {
-        fetch('/api/broadcast', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'PONG', timestamp: Date.now() })
-        }).catch(() => {});
+        channel.postMessage({ action: 'PONG', timestamp: Date.now() });
       } catch (e) {}
       break;
 
@@ -953,18 +1004,18 @@ function handleGraphicAction(action, payload) {
   }
 }
 
-// 1. Listen to Local BroadcastChannel
+// 1. Listen to Local BroadcastChannel (sub-millisecond same-browser response)
 channel.onmessage = (event) => {
-  const { action, payload } = event.data || {};
-  handleGraphicAction(action, payload);
+  const { action, payload, msgId, timestamp } = event.data || {};
+  handleGraphicAction(action, payload, msgId, timestamp);
 };
 
 // 2. Listen to LocalStorage Storage Events (cross-window fallback)
 window.addEventListener('storage', (e) => {
   if (e.key === 'sports_graphic_event' && e.newValue) {
     try {
-      const { action, payload } = JSON.parse(e.newValue);
-      handleGraphicAction(action, payload);
+      const { action, payload, msgId, timestamp } = JSON.parse(e.newValue);
+      handleGraphicAction(action, payload, msgId, timestamp);
     } catch (err) {
       console.warn('Storage event parse error:', err);
     }
@@ -976,26 +1027,29 @@ function initNetworkSseSync() {
   if (typeof EventSource === 'undefined') return;
   try {
     const sse = new EventSource('/api/events');
+    const connectionDot = document.getElementById('connection-dot');
+    const connectionText = document.getElementById('connection-text');
+
     sse.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
         if (data && data.action) {
-          handleGraphicAction(data.action, data.payload);
+          handleGraphicAction(data.action, data.payload, data.msgId, data.timestamp);
         }
       } catch (err) {
         console.warn('SSE message parse error:', err);
       }
     };
+
     sse.onopen = () => {
       console.log('📡 Connected to Cross-Device Real-Time Broadcast Server');
-      // Announce display is ready to all devices
-      try {
-        fetch('/api/broadcast', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'PONG', timestamp: Date.now() })
-        }).catch(() => {});
-      } catch (e) {}
+      if (connectionDot) connectionDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse';
+      if (connectionText) connectionText.textContent = 'Live Channel Connected';
+    };
+
+    sse.onerror = () => {
+      if (connectionDot) connectionDot.className = 'w-2.5 h-2.5 rounded-full bg-amber-500';
+      if (connectionText) connectionText.textContent = 'Reconnecting...';
     };
   } catch (err) {
     console.warn('SSE initialization error:', err);

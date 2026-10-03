@@ -347,10 +347,16 @@ async function resolveAccentColor(mapped, theme) {
 // -------------------------------------------------------------
 // Dual-Window Communication & Handshake
 // -------------------------------------------------------------
-function sendToDisplay(action, payload = {}) {
-  const message = { action, payload, timestamp: Date.now() };
+function generateMsgId(prefix = 'msg') {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
 
-  // 1. Same-device local BroadcastChannel
+function sendToDisplay(action, payload = {}) {
+  const msgId = payload.msgId || generateMsgId(action);
+  payload.msgId = msgId;
+  const message = { msgId, action, payload, timestamp: Date.now() };
+
+  // 1. Same-device local BroadcastChannel (sub-millisecond)
   try { channel.postMessage(message); } catch (e) {}
 
   // 2. Cross-window fallback via LocalStorage
@@ -358,17 +364,25 @@ function sendToDisplay(action, payload = {}) {
     localStorage.setItem('sports_graphic_event', JSON.stringify(message));
   } catch (e) {}
 
-  // 3. Cross-device Real-Time Network / Cloud Broadcast
-  try {
-    fetch('/api/broadcast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message)
-    }).catch(() => {});
-  } catch (e) {}
+  // 3. Cross-device Real-Time Network / Cloud Broadcast (skip local high-frequency pings)
+  if (action !== 'PING' && action !== 'PONG') {
+    try {
+      fetch('/api/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(message)
+      }).catch(() => {});
+    } catch (e) {}
+  }
 }
 
 let lastPongTime = 0;
+const seenDeskMsgIds = new Set();
+let lastRemoteTakeIndex = null;
+let lastRemoteTakeTime = 0;
+let lastDeskTakeIndex = null;
+let lastDeskTakeTime = 0;
+let lastDeskClearTime = 0;
 
 // Listen to local BroadcastChannel
 channel.onmessage = (event) => {
@@ -387,6 +401,18 @@ function initDeskNetworkSync() {
     sse.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);
+        if (!data || !data.action) return;
+
+        // Message ID Deduplication (drops duplicate transport echoes)
+        if (data.msgId) {
+          if (seenDeskMsgIds.has(data.msgId)) return;
+          seenDeskMsgIds.add(data.msgId);
+          if (seenDeskMsgIds.size > 200) {
+            const oldest = seenDeskMsgIds.values().next().value;
+            seenDeskMsgIds.delete(oldest);
+          }
+        }
+
         if (data.action === 'PONG') {
           lastPongTime = Date.now();
           markDisplayConnected(true);
@@ -397,7 +423,14 @@ function initDeskNetworkSync() {
           }
         } else if (data.action === 'REMOTE_TAKE') {
           const targetIndex = data.payload?.index;
+          const now = Date.now();
           if (targetIndex !== undefined && targetIndex !== null) {
+            // Debounce rapid duplicate remote taps within 500ms
+            if (lastRemoteTakeIndex === targetIndex && (now - lastRemoteTakeTime) < 500) {
+              return;
+            }
+            lastRemoteTakeIndex = targetIndex;
+            lastRemoteTakeTime = now;
             takeRowOnAir(targetIndex, true);
           }
         } else if (data.action === 'REMOTE_CLEAR') {
@@ -832,6 +865,13 @@ function broadcastRosterState() {
 // -------------------------------------------------------------
 async function takeRowOnAir(index, emitAudio = true) {
   if (index < 0 || index >= rawSheetData.length) return;
+
+  const now = Date.now();
+  if (lastDeskTakeIndex === index && (now - lastDeskTakeTime) < 600) {
+    return;
+  }
+  lastDeskTakeIndex = index;
+  lastDeskTakeTime = now;
   activeRowIndex = index;
 
   const rawRow = rawSheetData[index];
@@ -857,6 +897,8 @@ async function takeRowOnAir(index, emitAudio = true) {
   }
 
   let graphicPayload = {
+    msgId: generateMsgId('TAKE'),
+    emitAudio,
     template,
     theme,
     accentColor,
@@ -920,6 +962,12 @@ async function takeRowOnAir(index, emitAudio = true) {
 }
 
 function clearOnAir() {
+  const now = Date.now();
+  if (activeRowIndex === null && (now - lastDeskClearTime) < 500) {
+    return;
+  }
+  lastDeskClearTime = now;
+  lastDeskTakeIndex = null;
   activeRowIndex = null;
 
   liveIndicatorDot.className = 'w-3 h-3 rounded-full bg-slate-600';
@@ -928,7 +976,7 @@ function clearOnAir() {
 
   previewRenderArea.innerHTML = '';
 
-  sendToDisplay('CLEAR');
+  sendToDisplay('CLEAR', { msgId: generateMsgId('CLEAR') });
   renderRosterTable();
 }
 
@@ -957,6 +1005,8 @@ document.getElementById('btn-manual-push')?.addEventListener('click', async () =
   const { accentColor } = await resolveAccentColor({ name, subtitle: team }, theme);
 
   const payload = {
+    msgId: generateMsgId('TAKE'),
+    emitAudio: true,
     template,
     theme,
     accentColor,
