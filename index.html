@@ -53,6 +53,18 @@
           <p class="text-xs text-slate-400">Google Sheets Dual-Window Broadcast Automation</p>
         </div>
       </div>
+
+      <!-- View Switcher Tabs -->
+      <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <button id="tab-desk-btn" class="nav-tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-sports font-bold tracking-wider uppercase transition flex items-center gap-1.5">
+          <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+          <span>Broadcast Desk</span>
+        </button>
+        <button id="tab-studio-btn" class="nav-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-sports font-bold tracking-wider uppercase transition flex items-center gap-1.5">
+          <i data-lucide="palette" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>Vector Artboard Studio</span>
+        </button>
+      </div>
     </div>
 
     <!-- Dual Window Connection Status & Display Launcher -->
@@ -77,8 +89,10 @@
     </div>
   </header>
 
-  <!-- Main Work Area (3-Column Broadcast Desk) -->
-  <main class="flex-1 p-4 sm:p-6 max-w-[1920px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-desk gap-6 desk-3col-grid">
+  <!-- View 1: Broadcast Desk View -->
+  <div id="view-broadcast-desk" class="flex-1 flex flex-col">
+    <!-- Main Work Area (3-Column Broadcast Desk) -->
+    <main class="flex-1 p-4 sm:p-6 max-w-[1920px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-desk gap-6 desk-3col-grid">
 
     <!-- Left Column: Source & Data Table (Column 1) -->
     <div class="lg:col-span-12 xl:col-span-1 desk-col flex flex-col gap-5">
@@ -578,8 +592,375 @@
 
     </div>
   </main>
+  </div>
+
+  <!-- View 2: Vector Artboard Studio View -->
+  <div id="view-artboard-studio" class="hidden flex-1 flex flex-col overflow-hidden bg-[#0a0d14]">
+    <!-- Studio Header / Action Bar -->
+    <div class="h-14 bg-[#0f141f] border-b border-slate-800/80 px-4 flex items-center justify-between shrink-0 shadow-md">
+      <!-- Left: Mode & History -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 pr-3 border-r border-slate-800">
+          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span class="font-sports font-bold text-xs tracking-wider uppercase text-cyan-400">1920×1080 Artboard</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button id="studio-btn-undo" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Undo (Ctrl+Z)">
+            <i data-lucide="undo-2" class="w-4 h-4"></i>
+          </button>
+          <button id="studio-btn-redo" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition" title="Redo (Ctrl+Y)">
+            <i data-lucide="redo-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div class="h-4 w-px bg-slate-800"></div>
+        <button id="studio-btn-clear" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-red-950/40 hover:text-red-400 text-slate-400 text-xs transition border border-slate-800">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Clear Canvas</span>
+        </button>
+      </div>
+
+      <!-- Center: Zoom & View Options -->
+      <div class="flex items-center gap-4">
+        <!-- Zoom Presets -->
+        <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800">
+          <button id="studio-zoom-fit" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-slate-300 text-xs font-sports font-bold transition">FIT</button>
+          <button id="studio-zoom-50" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-mono transition">50%</button>
+          <button id="studio-zoom-75" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-mono transition">75%</button>
+          <button id="studio-zoom-100" class="px-2 py-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-mono transition">100%</button>
+          <span id="studio-zoom-label" class="px-2 text-xs font-mono text-cyan-400 font-bold">65%</span>
+        </div>
+
+        <div class="h-4 w-px bg-slate-800"></div>
+
+        <!-- Safe Guides & Checkerboard Toggles -->
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer hover:text-white select-none">
+            <input type="checkbox" id="studio-toggle-safeguides" checked class="rounded border-slate-700 text-cyan-500 bg-slate-800 focus:ring-0 w-3.5 h-3.5">
+            <span>Safe Guides</span>
+          </label>
+          <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer hover:text-white select-none">
+            <input type="checkbox" id="studio-toggle-checkerboard" checked class="rounded border-slate-700 text-cyan-500 bg-slate-800 focus:ring-0 w-3.5 h-3.5">
+            <span>Checkerboard</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Right: Export & 1-Click Live Broadcast Button -->
+      <div class="flex items-center gap-3">
+        <button id="studio-btn-download-svg" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-sports font-bold tracking-wider uppercase border border-slate-700 transition active:scale-95" title="Export as standalone clean .SVG file">
+          <i data-lucide="download" class="w-3.5 h-3.5 text-slate-400"></i>
+          <span>Export SVG</span>
+        </button>
+
+        <button id="studio-btn-send-broadcast" class="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-red-600 via-rose-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white text-xs font-sports font-black tracking-wider uppercase shadow-lg shadow-red-600/30 transition active:scale-95" title="Compile Vector Design and immediately load into Live Broadcast Desk">
+          <i data-lucide="radio" class="w-4 h-4 animate-pulse"></i>
+          <span>Send to Live Broadcast Desk</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Studio 3-Panel Layout -->
+    <div class="flex-1 flex overflow-hidden">
+      <!-- Left Panel: Tools, Presets & Layer Stack -->
+      <aside class="w-72 bg-[#0f141f] border-r border-slate-800/80 flex flex-col shrink-0 overflow-hidden">
+        <!-- Tools Section -->
+        <div class="p-3 border-b border-slate-800/80">
+          <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 block mb-2">Vector Drawing Tools</span>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button class="studio-tool-btn bg-red-600 text-white flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-700/60 hover:border-red-500 transition" data-tool="select">
+              <i data-lucide="mouse-pointer-2" class="w-3.5 h-3.5"></i>
+              <span>Select (V)</span>
+            </button>
+            <button class="studio-tool-btn bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-800 hover:border-slate-700 transition" data-tool="slant">
+              <i data-lucide="slash" class="w-3.5 h-3.5 text-rose-400"></i>
+              <span>Angled Plate (S)</span>
+            </button>
+            <button class="studio-tool-btn bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-800 hover:border-slate-700 transition" data-tool="rect">
+              <i data-lucide="square" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Rect Plate (R)</span>
+            </button>
+            <button class="studio-tool-btn bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-800 hover:border-slate-700 transition" data-tool="text">
+              <i data-lucide="type" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Text Layer (T)</span>
+            </button>
+            <button class="studio-tool-btn bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-800 hover:border-slate-700 transition" data-tool="image">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Photo Frame (I)</span>
+            </button>
+            <button class="studio-tool-btn bg-slate-900 hover:bg-slate-800 text-slate-300 flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-sports font-semibold border border-slate-800 hover:border-slate-700 transition" data-tool="badge">
+              <i data-lucide="hexagon" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Badge Crest (B)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Starter Templates -->
+        <div class="p-3 border-b border-slate-800/80">
+          <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 block mb-2">Quick Starter Templates</span>
+          <div class="flex flex-col gap-1.5">
+            <button id="studio-btn-add-lowerthird" class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-sports text-slate-200 transition">
+              <div class="flex items-center gap-2">
+                <i data-lucide="layout-template" class="w-3.5 h-3.5 text-red-400"></i>
+                <span>Angled Lower Third</span>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono">1080p</span>
+            </button>
+            <button id="studio-btn-add-scorebug" class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-sports text-slate-200 transition">
+              <div class="flex items-center gap-2">
+                <i data-lucide="trophy" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>Score Bug Plate</span>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono">Top Bar</span>
+            </button>
+            <button id="studio-btn-add-alert" class="flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-xs font-sports text-slate-200 transition">
+              <div class="flex items-center gap-2">
+                <i data-lucide="flame" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Breaking Match Alert</span>
+              </div>
+              <span class="text-[10px] text-slate-500 font-mono">Banner</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Layers Stack Tree -->
+        <div class="flex-1 flex flex-col min-h-0">
+          <div class="px-3 py-2 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400">Layer Stack (Z-Order)</span>
+            </div>
+            <span class="text-[10px] text-slate-500 font-mono">Top = Front</span>
+          </div>
+          <div id="studio-layer-stack" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+            <!-- Dynamically populated by studio.js -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center Panel: Interactive Artboard Viewport -->
+      <main id="artboard-viewport" class="artboard-viewport flex-1 overflow-auto flex items-center justify-center p-8 relative select-none">
+        <!-- 1920x1080 Scaled Canvas Container -->
+        <div id="artboard-frame" class="artboard-frame checkerboard-bg relative shadow-2xl shrink-0" style="width: 1920px; height: 1080px;">
+          <!-- Broadcast Safe Margins Guide Overlay -->
+          <div id="artboard-safe-guides" class="pointer-events-none absolute inset-0 z-20">
+            <div class="safe-zone-action absolute inset-[5%] pointer-events-none" title="Action Safe Zone (90%)"></div>
+            <div class="safe-zone-title absolute inset-[10%] pointer-events-none" title="Title Safe Zone (80%)"></div>
+          </div>
+
+          <!-- Dynamic SVG Vector Canvas -->
+          <svg id="artboard-svg" width="1920" height="1080" viewBox="0 0 1920 1080" class="w-full h-full relative z-10 block" xmlns="http://www.w3.org/2000/svg">
+            <!-- Elements dynamically drawn here by studio.js -->
+          </svg>
+        </div>
+      </main>
+
+      <!-- Right Panel: Properties Inspector & Dynamic Google Sheet Binder -->
+      <aside class="w-80 bg-[#0f141f] border-l border-slate-800/80 flex flex-col shrink-0 overflow-y-auto custom-scrollbar p-4">
+        <!-- Empty State -->
+        <div id="inspector-empty-state" class="flex flex-col items-center justify-center h-full text-center py-12 text-slate-500">
+          <i data-lucide="mouse-pointer-click" class="w-8 h-8 mb-2 opacity-50 text-cyan-400"></i>
+          <p class="font-sports font-bold text-xs uppercase tracking-wider text-slate-400">No Element Selected</p>
+          <p class="text-[11px] text-slate-600 mt-1 max-w-[200px]">Click any shape or text on the canvas to inspect its geometry, styling, and Google Sheet binding.</p>
+        </div>
+
+        <!-- Element Properties Form -->
+        <div id="inspector-form" class="space-y-4 hidden">
+          <!-- Element Header -->
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-slate-400">Selected Element</span>
+              <input id="prop-name" type="text" readonly class="bg-transparent border-none p-0 text-sm font-sports font-bold text-white block focus:ring-0">
+            </div>
+          </div>
+
+          <!-- Dynamic Google Sheet Binding Selector (HIGHLIGHTED CARD) -->
+          <div class="bg-gradient-to-br from-amber-500/10 via-slate-900 to-slate-900 border border-amber-500/40 rounded-xl p-3 shadow-lg">
+            <div class="flex items-center gap-1.5 mb-2">
+              <i data-lucide="sheet" class="w-4 h-4 text-amber-400"></i>
+              <span class="text-xs font-sports font-bold tracking-wider uppercase text-amber-300">Sheet Data Binding</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-2">Connect this vector element to live Google Sheet columns:</p>
+            <select id="prop-sheet-binding" class="w-full bg-slate-950 border border-amber-500/50 rounded-lg p-2 text-xs font-sports font-bold text-amber-300 focus:outline-none focus:border-amber-400 transition cursor-pointer">
+              <option value="none">Static (No Google Sheet Binding)</option>
+              <option value="name">#player-name (Athlete / Title Name)</option>
+              <option value="subtitle">#team-name (Team / Subtitle)</option>
+              <option value="number">#jersey-number (Jersey / Badge #)</option>
+              <option value="photo">#player-photo (Photo / Avatar URL)</option>
+              <option value="color">#accent-color (Accent / Team Color)</option>
+              <option value="stat1">#stat-1-val (Stat 1 Value)</option>
+              <option value="stat1_lbl">#stat-1-lbl (Stat 1 Label)</option>
+              <option value="stat2">#stat-2-val (Stat 2 Value)</option>
+              <option value="stat2_lbl">#stat-2-lbl (Stat 2 Label)</option>
+              <option value="stat3">#stat-3-val (Stat 3 Value)</option>
+              <option value="stat3_lbl">#stat-3-lbl (Stat 3 Label)</option>
+              <option value="category">#category-tag (Header / League Tag)</option>
+            </select>
+          </div>
+
+          <!-- Geometry & Transform -->
+          <div class="space-y-2.5">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 block">Geometry & Transform</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">X Position</label>
+                <input id="prop-x" type="number" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Y Position</label>
+                <input id="prop-y" type="number" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Width</label>
+                <input id="prop-w" type="number" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Height</label>
+                <input id="prop-h" type="number" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+            </div>
+
+            <!-- Sports Skew Angle (Dynamic Lean) -->
+            <div class="pt-1">
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[10px] text-slate-400">Sports Skew Angle</label>
+                <span class="text-[10px] text-slate-500 font-mono">-15° typical</span>
+              </div>
+              <input id="prop-skew" type="number" min="-60" max="60" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+            </div>
+
+            <!-- Corner Radius (rx) -->
+            <div id="inspector-radius-row" class="pt-1">
+              <label class="text-[10px] text-slate-400 block mb-1">Corner Radius</label>
+              <input id="prop-rx" type="number" min="0" max="100" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+            </div>
+
+            <!-- Opacity -->
+            <div class="pt-1">
+              <label class="text-[10px] text-slate-400 block mb-1">Opacity (0 to 1)</label>
+              <input id="prop-opacity" type="number" step="0.05" min="0" max="1" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+            </div>
+          </div>
+
+          <!-- Fill & Color Styling -->
+          <div class="space-y-2.5 pt-2 border-t border-slate-800">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-slate-400 block">Fill & Color Appearance</span>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Fill Type</label>
+              <select id="prop-fill-type" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-sports text-slate-200">
+                <option value="solid">Solid Color</option>
+                <option value="gradient">Linear Gradient</option>
+              </select>
+            </div>
+
+            <!-- Solid Color Row -->
+            <div id="inspector-solid-controls" class="space-y-1.5">
+              <label class="text-[10px] text-slate-400 block">Fill Color</label>
+              <div class="flex items-center gap-2">
+                <input id="prop-fill-color" type="color" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer p-0">
+                <span class="text-xs font-mono text-slate-400">Click to change</span>
+              </div>
+            </div>
+
+            <!-- Gradient Controls -->
+            <div id="inspector-gradient-controls" class="space-y-2 hidden">
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-1">Color 1</label>
+                  <input id="prop-grad-1" type="color" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer p-0">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block mb-1">Color 2</label>
+                  <input id="prop-grad-2" type="color" class="w-8 h-8 rounded border border-slate-700 bg-transparent cursor-pointer p-0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Fast Color Presets -->
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1.5">Quick Sports Swatches</label>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#e10600]" data-color="#e10600" title="Neon Red"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#00f0ff]" data-color="#00f0ff" title="Electric Cyan"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#ffb800]" data-color="#ffb800" title="Gold Yellow"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#10b981]" data-color="#10b981" title="Emerald Green"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#3b82f6]" data-color="#3b82f6" title="Royal Blue"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#8b5cf6]" data-color="#8b5cf6" title="Neon Purple"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#ffffff]" data-color="#ffffff" title="Pure White"></button>
+                <button class="preset-swatch w-5 h-5 rounded-full border border-slate-600 bg-[#0f172a]" data-color="#0f172a" title="Midnight Navy"></button>
+              </div>
+            </div>
+
+            <!-- Stroke Controls -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Stroke Width</label>
+                <input id="prop-stroke-w" type="number" min="0" max="20" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Stroke Color</label>
+                <div class="flex items-center gap-1.5 pt-0.5">
+                  <input id="prop-stroke-color" type="color" class="w-7 h-7 rounded border border-slate-700 bg-transparent cursor-pointer p-0">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typography Panel (Shown when type === 'text') -->
+          <div id="inspector-text-panel" class="space-y-2.5 pt-2 border-t border-slate-800 hidden">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-amber-400 block">Typography Settings</span>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Text Content</label>
+              <input id="prop-text-content" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-sports text-slate-200">
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Font Family</label>
+              <select id="prop-text-font" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-sports text-slate-200">
+                <option value="Chakra Petch">Chakra Petch (Aggressive Sports)</option>
+                <option value="Inter">Inter (Clean Modern Sans)</option>
+                <option value="Bebas Neue">Bebas Neue (Tall Condensed)</option>
+                <option value="Montserrat">Montserrat (Geometric Sans)</option>
+                <option value="Oswald">Oswald (Broadcast Headline)</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Font Size (px)</label>
+                <input id="prop-text-size" type="number" min="8" max="200" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Tracking (Letter-Spacing)</label>
+                <input id="prop-text-spacing" type="number" min="0" max="20" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Text Align</label>
+              <select id="prop-text-align" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs font-sports text-slate-200">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Image Panel (Shown when type === 'image') -->
+          <div id="inspector-image-panel" class="space-y-2.5 pt-2 border-t border-slate-800 hidden">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-emerald-400 block">Photo Frame Settings</span>
+            <div>
+              <label class="text-[10px] text-slate-400 block mb-1">Image URL / Data URI</label>
+              <input id="prop-image-url" type="text" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200" placeholder="https://...">
+            </div>
+            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer pt-1">
+              <input id="prop-image-clip" type="checkbox" class="rounded border-slate-700 text-emerald-500 bg-slate-800 focus:ring-0">
+              <span>Apply Rounded Clip Path</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
 
   <script src="app.js"></script>
+  <script src="studio.js"></script>
   <script>
     lucide.createIcons();
   </script>

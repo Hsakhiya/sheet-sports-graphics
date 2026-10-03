@@ -250,3 +250,117 @@
   }
 }
 
+/* =============================================================
+   Vector Artboard Studio Styles
+   ============================================================= */
+
+/* Tab Switcher Active State */
+.nav-tab-btn.active {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: #ffffff;
+  border-color: #e10600;
+  box-shadow: 0 4px 12px rgba(225, 6, 0, 0.25);
+}
+
+.nav-tab-btn:not(.active) {
+  color: #94a3b8;
+  border-color: transparent;
+}
+.nav-tab-btn:not(.active):hover {
+  color: #f1f5f9;
+  background-color: rgba(30, 41, 59, 0.5);
+}
+
+/* Artboard Viewport & Canvas Background */
+.artboard-viewport {
+  background-color: #070a10;
+  background-image: 
+    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px, 120px 120px, 120px 120px;
+}
+
+/* 1920x1080 Scaled Canvas Container */
+.artboard-frame {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: #000000;
+  transform-origin: top center;
+  transition: transform 0.15s ease-out;
+}
+
+/* Transparent Canvas Grid (checkerboard for broadcast transparency preview) */
+.checkerboard-bg {
+  background-image: linear-gradient(45deg, #121824 25%, transparent 25%),
+                    linear-gradient(-45deg, #121824 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, #121824 75%),
+                    linear-gradient(-45deg, transparent 75%, #121824 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Broadcast Safe Margins */
+.safe-zone-action {
+  border: 1px dashed rgba(56, 189, 248, 0.55);
+}
+.safe-zone-title {
+  border: 1px dashed rgba(52, 211, 153, 0.55);
+}
+
+/* Interactive SVG Elements */
+.artboard-element {
+  cursor: move;
+  outline: none;
+}
+.artboard-element:hover {
+  filter: brightness(1.05);
+}
+
+/* Selection Bounding Box & 8 Resize Handles */
+.selection-box {
+  pointer-events: none;
+  stroke: #00f0ff;
+  stroke-width: 2;
+  stroke-dasharray: 4 2;
+  fill: rgba(0, 240, 255, 0.04);
+}
+
+.resize-handle {
+  width: 10px;
+  height: 10px;
+  background-color: #ffffff;
+  border: 2px solid #00f0ff;
+  border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 50;
+}
+
+.resize-handle.nw, .resize-handle.se { cursor: nwse-resize; }
+.resize-handle.ne, .resize-handle.sw { cursor: nesw-resize; }
+.resize-handle.n,  .resize-handle.s  { cursor: ns-resize; }
+.resize-handle.w,  .resize-handle.e  { cursor: ew-resize; }
+
+/* Layer Stack Item */
+.layer-row {
+  transition: all 0.12s ease;
+}
+.layer-row:hover {
+  background-color: rgba(30, 41, 59, 0.6);
+}
+.layer-row.active {
+  background-color: rgba(0, 240, 255, 0.12);
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+/* Color swatch button */
+.color-swatch-btn {
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.color-swatch-btn:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 8px currentColor;
+}
+
+

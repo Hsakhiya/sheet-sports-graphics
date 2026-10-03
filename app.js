@@ -1896,6 +1896,28 @@ btnLoadSampleSvg?.addEventListener('click', () => {
     });
 });
 
+// Bridge: Ingest compiled SVG from Artboard Studio directly into Broadcast Desk
+window.loadSvgFromStudio = function(svgText) {
+  loadSvgMarkup(svgText, 'Vector_Studio_Custom.svg');
+  selectTemplate.value = 'custom_svg';
+  selectTemplate.dispatchEvent(new Event('change'));
+  if (activeRowIndex !== null) {
+    takeRowOnAir(activeRowIndex, false);
+  } else if (rawSheetData.length > 0) {
+    const mapped = getMappedRowData(rawSheetData[0]);
+    const layerValues = computeSvgLayerValues(rawSheetData[0], mapped, inputCategoryTag.value || 'LIVE BROADCAST');
+    resolveAccentColor(mapped, selectTheme.value).then(({ accentColor }) => {
+      renderConfidencePreview({
+        template: 'custom_svg',
+        theme: selectTheme.value,
+        accentColor,
+        svgMarkup: currentSvgText,
+        layerValues
+      });
+    });
+  }
+};
+
 // Highlight SVG Studio & Position Inspector when custom_svg template is selected
 selectTemplate.addEventListener('change', () => {
   if (selectTemplate.value === 'custom_svg') {
