@@ -236,3 +236,17 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
 }
+
+/* Operator Desk 3-Column Pro Layout (Slightly wider 3rd preview column) */
+@media (min-width: 1280px) {
+  .desk-3col-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr) minmax(0, 0.95fr) !important;
+    gap: 1.5rem !important;
+  }
+  .desk-3col-grid > .desk-col {
+    grid-column: span 1 / span 1 !important;
+    width: 100% !important;
+  }
+}
+

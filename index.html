@@ -16,6 +16,9 @@
       darkMode: 'class',
       theme: {
         extend: {
+          gridTemplateColumns: {
+            'desk': 'minmax(0, 1.25fr) minmax(0, 0.9fr) minmax(0, 0.95fr)',
+          },
           colors: {
             brand: '#e10600',
             primary: 'var(--primary)',
@@ -75,10 +78,10 @@
   </header>
 
   <!-- Main Work Area (3-Column Broadcast Desk) -->
-  <main class="flex-1 p-4 sm:p-6 max-w-[1920px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+  <main class="flex-1 p-4 sm:p-6 max-w-[1920px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 xl:grid-cols-desk gap-6 desk-3col-grid">
 
-    <!-- Left Column: Source & Data Table (5 Cols on xl) -->
-    <div class="lg:col-span-12 xl:col-span-5 flex flex-col gap-5">
+    <!-- Left Column: Source & Data Table (Column 1) -->
+    <div class="lg:col-span-12 xl:col-span-1 desk-col flex flex-col gap-5">
 
       <!-- Google Sheet Ingestion Card -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -268,8 +271,8 @@
 
     </div>
 
-    <!-- Middle Column: Broadcast Controls & SVG Studio (4 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-4 flex flex-col gap-5">
+    <!-- Middle Column: Broadcast Controls & SVG Studio (Column 2) -->
+    <div class="lg:col-span-6 xl:col-span-1 desk-col flex flex-col gap-5">
 
       <!-- Live Broadcast Master Control Bar -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
@@ -405,8 +408,8 @@
 
     </div>
 
-    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Position Inspector (3 Cols on xl) -->
-    <div class="lg:col-span-6 xl:col-span-3 flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
+    <!-- Right Column: Dedicated Live Confidence Preview Monitor & Position Inspector (Column 3) -->
+    <div class="lg:col-span-6 xl:col-span-1 desk-col flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
 
       <!-- Simulated On-Air Live Preview Canvas -->
       <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
