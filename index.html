@@ -82,7 +82,7 @@
       </button>
 
       <!-- Multi-Device Network Connect Button -->
-      <button id="btn-device-modal" title="Connect Phone, iPad, or Remote OBS on Wi-Fi or Cloud" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition">
+      <button id="btn-device-modal" onclick="openDeviceModal()" title="Connect Phone, iPad, or Remote OBS on Wi-Fi or Cloud" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition">
         <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
         <span>Connect Devices (QR)</span>
       </button>
@@ -966,7 +966,7 @@
   </div>
 
   <!-- Multi-Device & Cloud Connection Modal -->
-  <div id="device-connect-modal" class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+  <div id="device-connect-modal" class="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden" style="display: none;">
     <div class="bg-[#0f141f] border border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
       <!-- Modal Header -->
       <div class="p-4 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
@@ -979,7 +979,7 @@
             <p class="text-[11px] text-slate-400">Control graphics from mobile, tablet, or OBS on any device</p>
           </div>
         </div>
-        <button id="btn-close-device-modal" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+        <button id="btn-close-device-modal" onclick="closeDeviceModal()" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
           <i data-lucide="x" class="w-4 h-4"></i>
         </button>
       </div>

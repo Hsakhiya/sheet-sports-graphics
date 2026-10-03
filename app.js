@@ -812,11 +812,12 @@ function broadcastRosterState() {
     };
   });
 
+  const hasSheet = Boolean(typeof sheetUrlInput !== 'undefined' && sheetUrlInput && sheetUrlInput.value && sheetUrlInput.value.trim());
   const statePayload = {
     players,
     activeIndex: activeRowIndex,
-    categoryTag: inputCategoryTag?.value || 'LIVE BROADCAST',
-    sheetTitle: (inputSheetUrl && inputSheetUrl.value) ? 'Live Google Sheet' : `${selectPresetSport?.value || 'Sports'} Roster`
+    categoryTag: (typeof inputCategoryTag !== 'undefined' && inputCategoryTag) ? inputCategoryTag.value : 'LIVE BROADCAST',
+    sheetTitle: hasSheet ? 'Live Google Sheet' : 'Sports Roster'
   };
 
   fetch('/api/sheet-data', {
@@ -2296,9 +2297,10 @@ const netDisplayUrlInput = document.getElementById('net-display-url');
 const deviceQrCodeImg = document.getElementById('device-qr-code');
 
 async function openDeviceModal() {
-  if (!deviceConnectModal) return;
-  deviceConnectModal.classList.remove('hidden');
-  deviceConnectModal.style.display = 'flex';
+  const modal = document.getElementById('device-connect-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.style.setProperty('display', 'flex', 'important');
 
   if (window.lucide && window.lucide.createIcons) {
     window.lucide.createIcons();
@@ -2306,31 +2308,39 @@ async function openDeviceModal() {
 
   let baseOrigin = window.location.origin;
 
-  // Try querying server for local network IPs if currently on localhost
-  try {
-    const res = await fetch('/api/network-info');
-    if (res.ok) {
-      const info = await res.json();
-      if (info.localIps && info.localIps.length > 0) {
-        const ip = info.localIps[0];
-        baseOrigin = `http://${ip}:${info.port || 3000}`;
+  // Only query server network info if on localhost or 127.0.0.1
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isLocalhost) {
+    try {
+      const res = await fetch('/api/network-info');
+      if (res.ok) {
+        const info = await res.json();
+        if (info.localIps && info.localIps.length > 0) {
+          const ip = info.localIps[0];
+          baseOrigin = `http://${ip}:${info.port || 3000}`;
+        }
       }
+    } catch (e) {
+      console.warn('Network info unavailable, using window origin:', e);
     }
-  } catch (e) {
-    console.warn('Network info unavailable, using window origin:', e);
   }
 
   const remoteUrl = `${baseOrigin}/remote.html`;
   const deskUrl = `${baseOrigin}/index.html`;
   const displayUrl = `${baseOrigin}/display.html`;
 
-  if (netRemoteUrlInput) netRemoteUrlInput.value = remoteUrl;
-  if (netDeskUrlInput) netDeskUrlInput.value = deskUrl;
-  if (netDisplayUrlInput) netDisplayUrlInput.value = displayUrl;
+  const remoteInput = document.getElementById('net-remote-url');
+  const deskInput = document.getElementById('net-desk-url');
+  const displayInput = document.getElementById('net-display-url');
+  const qrImg = document.getElementById('device-qr-code');
+
+  if (remoteInput) remoteInput.value = remoteUrl;
+  if (deskInput) deskInput.value = deskUrl;
+  if (displayInput) displayInput.value = displayUrl;
 
   // Generate dynamic QR code for instant mobile camera scan (POINTS TO MOBILE SWITCHER)
-  if (deviceQrCodeImg) {
-    deviceQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(remoteUrl)}&color=0-0-0&bgcolor=255-255-255`;
+  if (qrImg) {
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(remoteUrl)}&color=0-0-0&bgcolor=255-255-255`;
   }
 
   // Also make sure roster data is fresh on the server
@@ -2338,10 +2348,15 @@ async function openDeviceModal() {
 }
 
 function closeDeviceModal() {
-  if (!deviceConnectModal) return;
-  deviceConnectModal.classList.add('hidden');
-  deviceConnectModal.style.display = 'none';
+  const modal = document.getElementById('device-connect-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.style.setProperty('display', 'none', 'important');
 }
+
+// Expose globally for onclick handlers
+window.openDeviceModal = openDeviceModal;
+window.closeDeviceModal = closeDeviceModal;
 
 btnDeviceModal?.addEventListener('click', (e) => {
   e.preventDefault();
