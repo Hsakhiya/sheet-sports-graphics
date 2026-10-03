@@ -395,11 +395,21 @@ function initDeskNetworkSync() {
           if (count > 0 && !isDisplayConnected) {
             markDisplayConnected(true);
           }
+        } else if (data.action === 'REMOTE_TAKE') {
+          const targetIndex = data.payload?.index;
+          if (targetIndex !== undefined && targetIndex !== null) {
+            takeRowOnAir(targetIndex, true);
+          }
+        } else if (data.action === 'REMOTE_CLEAR') {
+          clearOnAir();
         }
       } catch (err) {}
     };
     sse.onopen = () => {
       sendToDisplay('PING');
+      if (typeof broadcastRosterState === 'function') {
+        broadcastRosterState();
+      }
     };
   } catch (err) {}
 }
@@ -779,9 +789,42 @@ function renderRosterTable() {
   });
 
   lucide.createIcons();
+  broadcastRosterState();
 }
 
 searchFilter.addEventListener('input', renderRosterTable);
+
+// -------------------------------------------------------------
+// Broadcast Roster State Sync with Remote Switchers
+// -------------------------------------------------------------
+function broadcastRosterState() {
+  if (!rawSheetData || rawSheetData.length === 0) return;
+
+  const players = rawSheetData.map((row, idx) => {
+    const mapped = getMappedRowData(row);
+    return {
+      index: idx,
+      name: mapped.name || `Player ${idx + 1}`,
+      subtitle: mapped.subtitle || '',
+      number: mapped.number || '',
+      photo: mapped.photo || '',
+      stats: mapped.stats || []
+    };
+  });
+
+  const statePayload = {
+    players,
+    activeIndex: activeRowIndex,
+    categoryTag: inputCategoryTag?.value || 'LIVE BROADCAST',
+    sheetTitle: (inputSheetUrl && inputSheetUrl.value) ? 'Live Google Sheet' : `${selectPresetSport?.value || 'Sports'} Roster`
+  };
+
+  fetch('/api/sheet-data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(statePayload)
+  }).catch(() => {});
+}
 
 // -------------------------------------------------------------
 // Broadcast Execution: TAKE & CLEAR
@@ -818,6 +861,7 @@ async function takeRowOnAir(index, emitAudio = true) {
     accentColor,
     elementOffsets,
     holdDuration: duration,
+    rowIndex: index,
     data: {
       category: categoryTag,
       name: mapped.name,
@@ -2246,6 +2290,7 @@ fetch(`sample_templates/pro_sports_lower_third.svg?t=${Date.now()}`)
 const btnDeviceModal = document.getElementById('btn-device-modal');
 const deviceConnectModal = document.getElementById('device-connect-modal');
 const btnCloseDeviceModal = document.getElementById('btn-close-device-modal');
+const netRemoteUrlInput = document.getElementById('net-remote-url');
 const netDeskUrlInput = document.getElementById('net-desk-url');
 const netDisplayUrlInput = document.getElementById('net-display-url');
 const deviceQrCodeImg = document.getElementById('device-qr-code');
@@ -2275,16 +2320,21 @@ async function openDeviceModal() {
     console.warn('Network info unavailable, using window origin:', e);
   }
 
+  const remoteUrl = `${baseOrigin}/remote.html`;
   const deskUrl = `${baseOrigin}/index.html`;
   const displayUrl = `${baseOrigin}/display.html`;
 
+  if (netRemoteUrlInput) netRemoteUrlInput.value = remoteUrl;
   if (netDeskUrlInput) netDeskUrlInput.value = deskUrl;
   if (netDisplayUrlInput) netDisplayUrlInput.value = displayUrl;
 
-  // Generate dynamic QR code for instant mobile camera scan
+  // Generate dynamic QR code for instant mobile camera scan (POINTS TO MOBILE SWITCHER)
   if (deviceQrCodeImg) {
-    deviceQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(deskUrl)}&color=0-0-0&bgcolor=255-255-255`;
+    deviceQrCodeImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(remoteUrl)}&color=0-0-0&bgcolor=255-255-255`;
   }
+
+  // Also make sure roster data is fresh on the server
+  broadcastRosterState();
 }
 
 function closeDeviceModal() {

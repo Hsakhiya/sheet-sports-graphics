@@ -988,28 +988,38 @@
       <div class="p-5 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
         <!-- 1. Wi-Fi Local Network Access with QR Code -->
         <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-          <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-cyan-400 block mb-1">Option 1: Wi-Fi / Local Studio Network</span>
-          <p class="text-xs text-slate-300 mb-3">Scan this QR code with your phone or tablet camera to immediately open and control graphics in real-time:</p>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-sports font-bold tracking-wider uppercase text-cyan-400">Scan to Open Mobile Switcher</span>
+            <span class="px-2 py-0.5 rounded bg-red-600/20 text-red-400 text-[10px] font-sports font-bold">TOUCH SWITCHER</span>
+          </div>
+          <p class="text-xs text-slate-300 mb-3">Scan this QR code with your phone camera to open the <strong>Mobile Remote Switcher</strong> (list of players + 1-tap "Take On-Air"):</p>
 
           <div class="flex flex-col sm:flex-row items-center gap-4 bg-slate-950 p-3 rounded-lg border border-slate-800/80">
             <!-- QR Code Image -->
             <div class="shrink-0 bg-white p-2 rounded-lg shadow-md flex items-center justify-center">
-              <img id="device-qr-code" src="" alt="Scan QR Code to open on mobile" class="w-28 h-28 object-contain">
+              <img id="device-qr-code" src="" alt="Scan QR Code to open Mobile Switcher" class="w-32 h-32 object-contain">
             </div>
             <!-- URLs & Copy -->
             <div class="flex-1 w-full space-y-2">
               <div>
-                <label class="text-[10px] text-slate-400 block font-sports">Mobile Operator Desk URL:</label>
+                <label class="text-[10px] text-slate-400 block font-sports">📱 Mobile Remote Switcher URL (Phone):</label>
                 <div class="flex items-center gap-1.5 mt-0.5">
-                  <input id="net-desk-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-cyan-300 select-all">
-                  <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-desk-url">Copy</button>
+                  <input id="net-remote-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-cyan-300 select-all">
+                  <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-remote-url">Copy</button>
                 </div>
               </div>
               <div>
-                <label class="text-[10px] text-slate-400 block font-sports">OBS / Display Window URL:</label>
+                <label class="text-[10px] text-slate-400 block font-sports">📡 OBS / Display Window URL:</label>
                 <div class="flex items-center gap-1.5 mt-0.5">
                   <input id="net-display-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-emerald-300 select-all">
                   <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-display-url">Copy</button>
+                </div>
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block font-sports">💻 Full Desktop Operator Desk URL:</label>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <input id="net-desk-url" readonly type="text" class="flex-1 bg-slate-900 border border-slate-700/80 rounded px-2 py-1 text-xs font-mono text-slate-300 select-all">
+                  <button class="btn-copy-input px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-xs transition" data-target="net-desk-url">Copy</button>
                 </div>
               </div>
             </div>

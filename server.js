@@ -9,6 +9,7 @@ const PUBLIC_DIR = __dirname;
 // Active Real-Time Server-Sent Events (SSE) Cross-Device Clients
 const sseClients = new Set();
 let lastGraphicState = null;
+let lastRosterState = null;
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=UTF-8',
@@ -85,6 +86,11 @@ function handleRequest(req, res) {
       res.write(`data: ${JSON.stringify(lastGraphicState)}\n\n`);
     }
 
+    // If there is active roster data, hydrate the newly connected mobile switcher
+    if (lastRosterState) {
+      res.write(`data: ${JSON.stringify({ action: 'ROSTER_SYNC', payload: lastRosterState })}\n\n`);
+    }
+
     // Announce current device count
     broadcastToSseClients({
       action: 'DEVICE_COUNT',
@@ -114,6 +120,9 @@ function handleRequest(req, res) {
         // Update persistent state for new displays
         if (message.action === 'TAKE' || message.action === 'CLEAR') {
           lastGraphicState = message;
+          if (lastRosterState) {
+            lastRosterState.activeIndex = message.action === 'CLEAR' ? null : (message.payload?.rowIndex ?? lastRosterState.activeIndex);
+          }
         } else if (message.action === 'UPDATE_OFFSETS' && lastGraphicState && lastGraphicState.payload) {
           lastGraphicState.payload.elementOffsets = message.payload.elementOffsets;
         }
@@ -132,7 +141,37 @@ function handleRequest(req, res) {
   }
 
   // -----------------------------------------------------------
-  // 3. API: Network Info & Multi-Device Discovery (/api/network-info)
+  // 3. API: Active Roster Data Sync (/api/sheet-data)
+  // -----------------------------------------------------------
+  if (reqUrl === '/api/sheet-data') {
+    if (req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(lastRosterState || { players: [], activeIndex: null }));
+      return;
+    }
+    if (req.method === 'POST') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          lastRosterState = JSON.parse(body);
+          broadcastToSseClients({
+            action: 'ROSTER_SYNC',
+            payload: lastRosterState
+          });
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        } catch (err) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid JSON payload' }));
+        }
+      });
+      return;
+    }
+  }
+
+  // -----------------------------------------------------------
+  // 4. API: Network Info & Multi-Device Discovery (/api/network-info)
   // -----------------------------------------------------------
   if (reqUrl === '/api/network-info') {
     const localIps = getLocalIpAddresses();

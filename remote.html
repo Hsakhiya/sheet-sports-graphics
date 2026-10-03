@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Mobile Remote Switcher - Sports Graphics</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0f17">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Chakra Petch & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            sports: ['Chakra Petch', 'sans-serif'],
+            display: ['Bebas Neue', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Safe Area insets for modern phones (iPhone notch/island) */
+    body {
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .live-pulse {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .active-row-card {
+      border-color: #ef4444 !important;
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+      box-shadow: 0 8px 24px -4px rgba(239, 68, 68, 0.3) !important;
+    }
+  </style>
+</head>
+<body class="bg-[#0b0f17] text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased">
+
+  <!-- Mobile Top Bar -->
+  <header class="bg-[#0f141f] border-b border-slate-800/90 px-4 py-3 sticky top-0 z-40 shadow-xl flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-md shadow-red-600/30">
+        <i data-lucide="radio" class="w-4 h-4 text-white"></i>
+      </div>
+      <div>
+        <h1 class="font-sports font-black text-sm text-white tracking-wider flex items-center gap-1.5">
+          BROADCAST <span class="text-[10px] px-1.5 py-0.2 rounded bg-red-600/20 text-red-400 border border-red-500/30 font-mono">REMOTE</span>
+        </h1>
+        <p id="remote-sheet-title" class="text-[10px] text-slate-400 truncate max-w-[170px]">Connecting to desk...</p>
+      </div>
+    </div>
+
+    <!-- Connection Status Pill -->
+    <div id="remote-status-pill" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono font-semibold">
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+      <span id="remote-status-text">Syncing...</span>
+    </div>
+  </header>
+
+  <!-- Sticky On-Air Status & Fast Kill Switch -->
+  <div class="sticky top-[53px] z-30 px-3 pt-2.5 pb-2 bg-[#0b0f17]/95 backdrop-blur-md border-b border-slate-800/60 shadow-lg">
+    <!-- Active On-Air Banner -->
+    <div id="on-air-banner" class="rounded-xl border border-slate-800 bg-[#121826] p-3 transition-all duration-200">
+      <!-- Off-Air State -->
+      <div id="state-off-air" class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+          <span class="font-sports font-bold text-xs uppercase tracking-wider text-slate-400">STANDBY • OFF-AIR</span>
+        </div>
+        <span class="text-[10px] font-mono text-slate-500">Tap any player to take live</span>
+      </div>
+
+      <!-- Live On-Air State -->
+      <div id="state-on-air" class="hidden flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+          <div class="w-3 h-3 rounded-full bg-red-500 live-pulse shrink-0"></div>
+          <div class="min-w-0">
+            <span class="text-[9px] font-sports font-bold tracking-widest uppercase text-red-400 block">LIVE ON-AIR NOW</span>
+            <div class="flex items-center gap-1.5 truncate">
+              <span id="live-jersey-badge" class="px-1.5 py-0.5 rounded bg-red-600/30 text-red-300 font-sports font-black text-xs">#10</span>
+              <span id="live-athlete-name" class="font-sports font-black text-sm text-white tracking-wide truncate">ATHLETE NAME</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Big Red Clear Button -->
+        <button id="btn-remote-clear" class="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 active:from-red-700 active:to-rose-700 text-white font-sports font-black text-xs tracking-wider uppercase shadow-lg shadow-red-600/30 transition active:scale-95">
+          <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
+          <span>CLEAR</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search Input -->
+    <div class="mt-2 relative">
+      <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+      <input id="remote-search-input" type="text" placeholder="Search athlete name or jersey #..." class="w-full bg-[#121826] border border-slate-800 rounded-xl pl-9 pr-8 py-2 text-xs font-sports text-white placeholder-slate-500 focus:outline-none focus:border-red-500 transition">
+      <button id="btn-clear-search" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-0.5 hidden">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Player Roster Cards List -->
+  <main class="flex-1 p-3 space-y-2.5 overflow-y-auto custom-scrollbar pb-12">
+    <!-- Loading / Empty State -->
+    <div id="remote-empty-state" class="flex flex-col items-center justify-center text-center py-16 text-slate-500">
+      <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-cyan-400 mb-3 animate-bounce">
+        <i data-lucide="sheet" class="w-6 h-6"></i>
+      </div>
+      <p class="font-sports font-bold text-sm text-slate-300">Connecting to Google Sheet...</p>
+      <p class="text-xs text-slate-500 mt-1 max-w-[240px]">Make sure the desktop Operator Desk has loaded a sheet or preset data.</p>
+    </div>
+
+    <!-- Players Cards Container -->
+    <div id="remote-player-list" class="space-y-2 hidden">
+      <!-- Dynamically generated player rows -->
+    </div>
+  </main>
+
+  <script src="remote.js"></script>
+</body>
+</html>
