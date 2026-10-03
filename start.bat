@@ -2,7 +2,7 @@
 title Sports Graphics Control Desk
 cd /d "%~dp0"
 
-:: 1. Check if Node.js is installed
+REM 1. Check if Node.js is installed
 where node >nul 2>nul
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -15,8 +15,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-:: 2. Check if server is already running on port 3000
-netstat -ano | findstr /R ":3000 .*LISTENING" >nul 2>nul
+REM 2. Check if server is already running on port 3000
+netstat -ano | findstr :3000 | findstr LISTENING >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     echo.
     echo ================================================================
@@ -25,13 +25,21 @@ if %ERRORLEVEL% equ 0 (
     echo Opening Control Desk in your default browser...
     start "" "http://localhost:3000"
     echo.
-    echo Press any key to close this launcher (server will remain running)...
+    echo Server is running. Press any key to exit this window.
     pause >nul
     exit /b 0
 )
 
-:: 3. Launch browser automatically after 2 seconds
-start "" /min cmd /c "timeout /t 2 /nobreak >nul & start http://localhost:3000"
+REM 3. Launch browser automatically
+start "" "http://localhost:3000"
 
-:: 4. Start local broadcast server in console
+REM 4. Start local broadcast server in console
 node server.js
+
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo ================================================================
+    echo   Server stopped. Press any key to close this window.
+    echo ================================================================
+    pause
+)
