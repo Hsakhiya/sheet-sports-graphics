@@ -837,7 +837,19 @@ function applyGlobalGraphicOffset(offsets) {
 // Display Action: Take On Air
 function showGraphic(payload) {
   currentGraphicPayload = payload;
-  const { template = 'player_card', theme = 'espn-red', data = {}, holdDuration = 0, svgMarkup, layerValues, accentColor, elementOffsets } = payload;
+  const {
+    template = 'player_card',
+    theme = 'espn-red',
+    data = {},
+    holdDuration = 0,
+    svgMarkup,
+    layerValues,
+    accentColor,
+    elementOffsets,
+    emitAudio,
+    lottieData,
+    lottieConfig
+  } = payload;
 
   // Apply Global Lower Third Screen Offset
   applyGlobalGraphicOffset(elementOffsets);
@@ -863,8 +875,14 @@ function showGraphic(payload) {
     hideTimer = null;
   }
 
-  // Build HTML
-  if (template === 'custom_svg' && svgMarkup) {
+  // Build Graphic Markup / Canvas
+  if (template === 'lottie_motion') {
+    wrapper.innerHTML = '';
+    const animData = lottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    if (window.LottieEngine && animData) {
+      window.LottieEngine.renderLottieGraphic(wrapper, animData, data, accentColor, lottieConfig || {}, false);
+    }
+  } else if (template === 'custom_svg' && svgMarkup) {
     wrapper.innerHTML = renderCustomSvgHTML(svgMarkup, layerValues || {}, accentColor, elementOffsets || {});
   } else {
     wrapper.innerHTML = buildGraphicHTML(template, data);
@@ -908,6 +926,9 @@ function hideGraphic() {
   setTimeout(() => {
     wrapper.classList.add('hidden');
     wrapper.classList.remove('anim-exit');
+    if (window.LottieEngine) {
+      window.LottieEngine.destroyAllLottieInstances();
+    }
     wrapper.innerHTML = '';
     isHidingGraphic = false;
   }, 420);

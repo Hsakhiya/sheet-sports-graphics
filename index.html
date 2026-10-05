@@ -316,6 +316,7 @@
             <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Graphic Template</label>
             <select id="select-template" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
               <option value="player_card" selected>🪪 Player Stat Card</option>
+              <option value="lottie_motion">💫 Lottie Motion Graphic (.json)</option>
               <option value="custom_svg">🎨 Custom Vector SVG Template</option>
               <option value="score_bug">⏱️ Match Score Bug / Banner</option>
               <option value="breaking_alert">🚨 Breaking Match Alert</option>
@@ -422,6 +423,94 @@
         <div class="max-h-56 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
           <div class="grid grid-cols-1 gap-2" id="svg-mapping-container">
             <!-- Dynamically populated layer mapping rows -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Lottie Motion Graphics Studio & Layer Mapper Card -->
+      <section id="lottie-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h2 class="font-sports font-bold text-sm tracking-wider uppercase text-white">Lottie Motion Studio (.json)</h2>
+              <p class="text-[11px] text-slate-400">After Effects / Bodymovin 60fps Vector Animations</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            <button id="btn-download-lottie" title="Download current Lottie JSON animation" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-medium border border-slate-700 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export .JSON</span>
+            </button>
+
+            <label class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600/20 hover:bg-cyan-600 text-cyan-400 hover:text-white border border-cyan-500/40 text-xs font-semibold cursor-pointer transition">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              <span>Upload .JSON</span>
+              <input type="file" id="lottie-file-input" accept=".json,application/json" class="hidden">
+            </label>
+          </div>
+        </div>
+
+        <!-- Preset Selector & Mode Selector -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Motion Preset</label>
+            <select id="select-lottie-preset" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
+              <option value="velocity_crimson" selected>🔴 Velocity Crimson (Kinetic Slat)</option>
+              <option value="cyber_neon">🌐 Cyber Neon (Esports HUD)</option>
+              <option value="champions_gold">🏆 Champions Gold (Chevron Ribbon)</option>
+              <option value="custom" disabled id="option-custom-lottie">📁 Custom Uploaded (.json)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Animation Mode</label>
+            <select id="select-lottie-mode" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
+              <option value="overlay" selected>✨ Motion Base + Broadcast Typography (Recommended)</option>
+              <option value="in_animation">🔄 In-Animation Text Binding (After Effects Layers)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lottie Info & Playback Settings -->
+        <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2 text-slate-300">
+            <span class="text-slate-500">Active Animation:</span>
+            <strong id="lottie-filename-label" class="text-cyan-400 font-mono text-[11px]">velocity_crimson.json</strong>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 text-xs">
+              <input type="checkbox" id="lottie-loop-toggle" checked class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-cyan-500">
+              <span>Loop</span>
+            </label>
+
+            <div class="flex items-center gap-1 text-slate-400">
+              <span class="text-[11px]">Speed:</span>
+              <select id="select-lottie-speed" class="bg-slate-900 border border-slate-700 text-white rounded px-1.5 py-0.5 text-[11px]">
+                <option value="0.75">0.75x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dynamic Lottie Layer Mapping Container (revealed when text layers are detected) -->
+        <div id="lottie-mapping-section" class="hidden">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-slate-400">Detected In-Animation Text Layers</span>
+            <span id="lottie-layers-count" class="text-[10px] font-mono text-cyan-400">0 Layers</span>
+          </div>
+          <div class="max-h-40 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
+            <div class="grid grid-cols-1 gap-2" id="lottie-mapping-container">
+              <!-- Dynamically populated layer mapping rows -->
+            </div>
           </div>
         </div>
       </section>
@@ -1052,6 +1141,11 @@
     </div>
   </div>
 
+  <!-- Lottie Animation Runtime & Broadcast Presets -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js"></script>
+  <script>window.lottie || document.write('<script src="lottie.min.js"><\/script>')</script>
+  <script src="lottie-presets.js"></script>
+  <script src="lottie-engine.js"></script>
   <script src="app.js"></script>
   <script src="studio.js"></script>
   <script>

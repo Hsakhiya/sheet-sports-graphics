@@ -363,4 +363,23 @@
   box-shadow: 0 0 8px currentColor;
 }
 
+/* Lottie Motion Graphic Styling */
+.lottie-graphic-root {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  overflow: hidden;
+}
 
+.lottie-canvas-mount svg {
+  width: 100% !important;
+  height: 100% !important;
+  transform-origin: center center;
+}
+
+.lottie-typography-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}

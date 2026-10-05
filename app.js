@@ -97,6 +97,31 @@ let currentSvgFilename = 'pro_sports_lower_third.svg';
 let svgLayerElements = [];
 let svgLayerMappings = {};
 
+// Lottie Motion Graphics Studio Elements & State
+const lottieCard = document.getElementById('lottie-card');
+const selectLottiePreset = document.getElementById('select-lottie-preset');
+const selectLottieMode = document.getElementById('select-lottie-mode');
+const lottieFileInput = document.getElementById('lottie-file-input');
+const btnDownloadLottie = document.getElementById('btn-download-lottie');
+const lottieFilenameLabel = document.getElementById('lottie-filename-label');
+const lottieLoopToggle = document.getElementById('lottie-loop-toggle');
+const selectLottieSpeed = document.getElementById('select-lottie-speed');
+const lottieMappingSection = document.getElementById('lottie-mapping-section');
+const lottieMappingContainer = document.getElementById('lottie-mapping-container');
+const lottieLayersCount = document.getElementById('lottie-layers-count');
+const optionCustomLottie = document.getElementById('option-custom-lottie');
+
+let currentLottiePresetId = 'velocity_crimson';
+let currentLottieData = (typeof window !== 'undefined' && window.LOTTIE_PRESETS?.velocity_crimson?.data) || null;
+let currentLottieFilename = 'velocity_crimson.json';
+let lottieLayerMappings = {};
+let lottieConfig = {
+  overlayMode: 'overlay',
+  loop: true,
+  speed: 1.0,
+  mappings: {}
+};
+
 // Element Position & Alignment (X, Y) Inspector Elements & State
 const elementPositionCard = document.getElementById('element-position-card');
 const posElementSelect = document.getElementById('pos-element-select');
@@ -940,6 +965,15 @@ async function takeRowOnAir(index, emitAudio = true) {
     };
   }
 
+  // Lottie Motion Graphic Template
+  if (template === 'lottie_motion') {
+    graphicPayload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    graphicPayload.lottieConfig = {
+      ...lottieConfig,
+      mappings: lottieLayerMappings
+    };
+  }
+
   // Custom Vector SVG Template with Named Layers
   if (template === 'custom_svg') {
     graphicPayload.svgMarkup = currentSvgText;
@@ -1118,6 +1152,23 @@ function renderConfidencePreview(payload) {
     previewRenderArea.style.removeProperty('--accent');
     previewRenderArea.style.removeProperty('--stripe-color');
     previewRenderArea.style.removeProperty('--glow-color');
+  }
+
+  // Lottie Motion Graphic Preview
+  if (template === 'lottie_motion') {
+    previewRenderArea.innerHTML = '';
+    const animData = payload.lottieData || currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    if (window.LottieEngine && animData) {
+      window.LottieEngine.renderLottieGraphic(
+        previewRenderArea,
+        animData,
+        data,
+        accentColor,
+        payload.lottieConfig || lottieConfig,
+        true
+      );
+    }
+    return;
   }
 
   // Custom Vector SVG Template Preview
@@ -2060,6 +2111,213 @@ selectTemplate.addEventListener('change', () => {
     customSvgCard?.classList.remove('ring-2', 'ring-amber-500/80');
     elementPositionCard?.classList.remove('ring-2', 'ring-cyan-500/80');
   }
+
+  if (selectTemplate.value === 'lottie_motion') {
+    lottieCard?.classList.add('ring-2', 'ring-cyan-500/80');
+  } else {
+    lottieCard?.classList.remove('ring-2', 'ring-cyan-500/80');
+  }
+});
+
+// -------------------------------------------------------------
+// Lottie Motion Graphics Studio Controller
+// -------------------------------------------------------------
+function loadLottieJson(jsonData, filename = 'custom_motion.json') {
+  if (!jsonData || typeof jsonData !== 'object') return;
+  currentLottieData = jsonData;
+  currentLottieFilename = filename;
+  if (lottieFilenameLabel) lottieFilenameLabel.textContent = filename;
+
+  updateLottieMappingUI();
+
+  if (selectTemplate.value === 'lottie_motion') {
+    if (activeRowIndex !== null) {
+      takeRowOnAir(activeRowIndex, false);
+    } else if (rawSheetData.length > 0) {
+      const mapped = getMappedRowData(rawSheetData[0]);
+      resolveAccentColor(mapped, selectTheme.value).then(({ accentColor }) => {
+        renderConfidencePreview({
+          template: 'lottie_motion',
+          theme: selectTheme.value,
+          accentColor,
+          lottieData: currentLottieData,
+          lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
+          data: mapped
+        });
+      });
+    }
+  }
+}
+
+function updateLottieMappingUI() {
+  if (!lottieMappingContainer) return;
+  lottieMappingContainer.innerHTML = '';
+
+  const layers = (window.LottieEngine && currentLottieData)
+    ? window.LottieEngine.extractLottieTextLayers(currentLottieData)
+    : [];
+
+  if (lottieLayersCount) {
+    lottieLayersCount.textContent = `${layers.length} Text Layer${layers.length === 1 ? '' : 's'} Detected`;
+  }
+
+  if (layers.length === 0) {
+    if (lottieMappingSection) lottieMappingSection.classList.add('hidden');
+    return;
+  }
+
+  if (lottieMappingSection) lottieMappingSection.classList.remove('hidden');
+
+  layers.forEach((layer) => {
+    const key = layer.name;
+    const currentMapping = lottieLayerMappings[key] || '';
+
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs';
+    row.innerHTML = `
+      <div class="flex items-center gap-1.5 min-w-0 flex-1">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
+        <span class="font-mono text-cyan-300 font-semibold truncate text-[11px]">${layer.name}</span>
+        <span class="text-slate-500 text-[10px] truncate max-w-[90px] font-sans">("${layer.text || ''}")</span>
+      </div>
+      <div class="shrink-0 w-44">
+        <select class="lottie-layer-select w-full bg-slate-950 border border-slate-700 text-white rounded p-1 text-[11px] outline-none" data-layer-name="${layer.name}">
+          <option value="">-- Do Not Replace --</option>
+          <optgroup label="Broadcast Data Fields">
+            <option value="name" ${currentMapping === 'name' ? 'selected' : ''}>👤 Athlete Name</option>
+            <option value="subtitle" ${currentMapping === 'subtitle' ? 'selected' : ''}>🛡️ Team / Subtitle</option>
+            <option value="number" ${currentMapping === 'number' ? 'selected' : ''}>🔢 Jersey Number</option>
+            <option value="category" ${currentMapping === 'category' ? 'selected' : ''}>🏷️ Category Tag</option>
+            <option value="stat1" ${currentMapping === 'stat1' ? 'selected' : ''}>📊 Stat 1 (Label + Value)</option>
+            <option value="stat2" ${currentMapping === 'stat2' ? 'selected' : ''}>📈 Stat 2 (Label + Value)</option>
+          </optgroup>
+          ${sheetColumns.length > 0 ? `
+            <optgroup label="Google Sheet Raw Columns">
+              ${sheetColumns.map(col => `
+                <option value="${col}" ${currentMapping === col ? 'selected' : ''}>${col}</option>
+              `).join('')}
+            </optgroup>
+          ` : ''}
+        </select>
+      </div>
+    `;
+
+    const selectEl = row.querySelector('.lottie-layer-select');
+    selectEl.addEventListener('change', (e) => {
+      lottieLayerMappings[key] = e.target.value;
+      if (selectTemplate.value === 'lottie_motion') {
+        if (activeRowIndex !== null) {
+          takeRowOnAir(activeRowIndex, false);
+        } else if (rawSheetData.length > 0) {
+          const mapped = getMappedRowData(rawSheetData[0]);
+          resolveAccentColor(mapped, selectTheme.value).then(({ accentColor }) => {
+            renderConfidencePreview({
+              template: 'lottie_motion',
+              theme: selectTheme.value,
+              accentColor,
+              lottieData: currentLottieData,
+              lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
+              data: mapped
+            });
+          });
+        }
+      }
+    });
+
+    lottieMappingContainer.appendChild(row);
+  });
+}
+
+function refreshLottiePreview() {
+  if (selectTemplate.value === 'lottie_motion') {
+    if (activeRowIndex !== null) {
+      takeRowOnAir(activeRowIndex, false);
+    } else if (rawSheetData.length > 0) {
+      const mapped = getMappedRowData(rawSheetData[0]);
+      resolveAccentColor(mapped, selectTheme.value).then(({ accentColor }) => {
+        renderConfidencePreview({
+          template: 'lottie_motion',
+          theme: selectTheme.value,
+          accentColor,
+          lottieData: currentLottieData,
+          lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
+          data: mapped
+        });
+      });
+    }
+  }
+}
+
+// Preset Selector
+selectLottiePreset?.addEventListener('change', (e) => {
+  const presetId = e.target.value;
+  if (presetId === 'custom') return;
+  const preset = window.LOTTIE_PRESETS && window.LOTTIE_PRESETS[presetId];
+  if (preset && preset.data) {
+    currentLottiePresetId = presetId;
+    loadLottieJson(preset.data, `${presetId}.json`);
+    selectTemplate.value = 'lottie_motion';
+    selectTemplate.dispatchEvent(new Event('change'));
+  }
+});
+
+// Mode Selector
+selectLottieMode?.addEventListener('change', (e) => {
+  lottieConfig.overlayMode = e.target.value;
+  refreshLottiePreview();
+});
+
+// Loop Toggle
+lottieLoopToggle?.addEventListener('change', (e) => {
+  lottieConfig.loop = e.target.checked;
+  refreshLottiePreview();
+});
+
+// Speed Selector
+selectLottieSpeed?.addEventListener('change', (e) => {
+  lottieConfig.speed = parseFloat(e.target.value) || 1.0;
+  refreshLottiePreview();
+});
+
+// Lottie File Upload (.json)
+lottieFileInput?.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      if (!parsed.v || !Array.isArray(parsed.layers)) {
+        alert('Invalid Lottie JSON file. Please ensure it was exported with Bodymovin or Lottie.');
+        return;
+      }
+      if (optionCustomLottie) {
+        optionCustomLottie.disabled = false;
+        optionCustomLottie.textContent = `📁 ${file.name}`;
+      }
+      if (selectLottiePreset) selectLottiePreset.value = 'custom';
+      loadLottieJson(parsed, file.name);
+      selectTemplate.value = 'lottie_motion';
+      selectTemplate.dispatchEvent(new Event('change'));
+    } catch (err) {
+      alert('Could not parse Lottie JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// Export Lottie JSON Button
+btnDownloadLottie?.addEventListener('click', () => {
+  if (!currentLottieData) return;
+  const blob = new Blob([JSON.stringify(currentLottieData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = currentLottieFilename || 'broadcast_motion.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 });
 
 // -------------------------------------------------------------
@@ -2299,6 +2557,11 @@ autoRefreshInterval.addEventListener('change', handleAutoRefresh);
 // -------------------------------------------------------------
 loadPresetData('soccer');
 updateElementPositionDropdown();
+
+// Pre-load default Lottie motion preset
+if (typeof window !== 'undefined' && window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson) {
+  loadLottieJson(window.LOTTIE_PRESETS.velocity_crimson.data, 'velocity_crimson.json');
+}
 
 // Pre-load default sample SVG template (cache-busted)
 fetch(`sample_templates/pro_sports_lower_third.svg?t=${Date.now()}`)
