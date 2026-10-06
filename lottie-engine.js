@@ -135,6 +135,19 @@
       });
     }
 
+    // Dynamic Photo / Image Asset Replacement from Sheet / Roster
+    const photoUrl = normalizeImageUrl(rowData.photo);
+    if (photoUrl && Array.isArray(cloned.assets)) {
+      cloned.assets.forEach(asset => {
+        // Match image assets in Lottie (assets with 'p' filename/dataURI and dimensions)
+        if (typeof asset.p === 'string' && (asset.w !== undefined || asset.h !== undefined)) {
+          asset.u = '';
+          asset.p = photoUrl;
+          asset.e = 1;
+        }
+      });
+    }
+
     return cloned;
   }
 
