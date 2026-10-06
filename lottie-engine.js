@@ -269,13 +269,24 @@
 
     container.innerHTML = '';
 
+    const isFullFrame = lottieData && (lottieData.w >= 1280 || lottieData.h >= 720);
+
     const root = document.createElement('div');
-    root.className = 'lottie-graphic-root relative w-full overflow-hidden rounded-2xl shadow-2xl flex items-center min-h-[160px] sm:min-h-[190px]';
-    root.style.background = 'transparent';
+    if (isFullFrame) {
+      root.className = 'lottie-graphic-root relative w-full h-full pointer-events-none overflow-visible';
+      root.style.background = 'transparent';
+    } else {
+      root.className = 'lottie-graphic-root relative w-full overflow-hidden rounded-2xl shadow-2xl flex items-center min-h-[160px] sm:min-h-[190px]';
+      root.style.background = 'transparent';
+    }
 
     // Mount canvas container for Bodymovin SVG renderer
     const canvasMount = document.createElement('div');
-    canvasMount.className = 'lottie-canvas-mount absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center';
+    if (isFullFrame) {
+      canvasMount.className = 'lottie-canvas-mount absolute inset-0 w-full h-full pointer-events-none';
+    } else {
+      canvasMount.className = 'lottie-canvas-mount absolute inset-0 w-full h-full pointer-events-none flex items-center justify-center';
+    }
     root.appendChild(canvasMount);
 
     const mode = config.overlayMode || 'overlay';

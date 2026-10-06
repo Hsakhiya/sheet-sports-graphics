@@ -384,3 +384,60 @@
   display: flex;
   align-items: center;
 }
+
+/* Full 16:9 Broadcast Frame for 1080p Lottie files */
+.lottie-broadcast-fullframe {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  top: 0 !important;
+  filter: none !important;
+  pointer-events: none !important;
+  overflow: visible !important;
+  z-index: 100;
+  transition: transform 0.15s ease-out, opacity 0.35s ease;
+}
+
+.lottie-broadcast-fullframe.anim-exit {
+  opacity: 0 !important;
+  animation: none !important;
+  transition: opacity 0.35s ease-out !important;
+}
+
+.lottie-broadcast-fullframe .lottie-graphic-root {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.lottie-broadcast-fullframe .lottie-canvas-mount {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.lottie-broadcast-fullframe .lottie-canvas-mount svg {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.lottie-broadcast-fullframe .lottie-typography-layer {
+  position: absolute !important;
+  left: 140px !important;
+  bottom: 80px !important;
+  width: 820px !important;
+  height: 160px !important;
+  display: flex !important;
+  align-items: center !important;
+}

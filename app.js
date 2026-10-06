@@ -1059,6 +1059,14 @@ document.getElementById('btn-manual-push')?.addEventListener('click', async () =
     }
   };
 
+  if (template === 'lottie_motion') {
+    payload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    payload.lottieConfig = {
+      ...lottieConfig,
+      mappings: lottieLayerMappings
+    };
+  }
+
   liveIndicatorDot.className = 'w-3 h-3 rounded-full bg-red-500 live-indicator-pulse';
   liveIndicatorText.textContent = `ON AIR: ${name}`;
   liveIndicatorText.className = 'font-sports font-extrabold text-sm tracking-widest text-red-500 uppercase';
@@ -1134,46 +1142,62 @@ function renderConfidencePreview(payload) {
   const pgx = (gx * 0.35).toFixed(1);
   const pgy = (gy * 0.35).toFixed(1);
 
+  // Lottie Motion Graphic Preview
+  if (template === 'lottie_motion') {
+    const animData = payload.lottieData || currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    const isFullFrame = animData && (animData.w >= 1280 || animData.h >= 720);
+
+    if (isFullFrame) {
+      const monitorWidth = previewRenderArea.parentElement?.clientWidth || 360;
+      const previewRatio = monitorWidth / 1920;
+      const fpgx = (gx * previewRatio).toFixed(1);
+      const fpgy = (gy * previewRatio).toFixed(1);
+
+      previewRenderArea.className = 'absolute inset-0 w-full h-full pointer-events-none transition-all duration-75';
+      previewRenderArea.style.transform = `translate(${fpgx}px, ${fpgy}px) scale(${scale})`;
+      previewRenderArea.style.transformOrigin = '15% 85%';
+      previewRenderArea.style.outline = 'none';
+    } else {
+      previewRenderArea.className = 'w-full transform transition-all duration-75 origin-bottom-left';
+      previewRenderArea.style.transform = `scale(${(0.9 * scale).toFixed(3)}) translate(${pgx}px, ${pgy}px)`;
+      previewRenderArea.style.transformOrigin = 'bottom left';
+    }
+
+    previewRenderArea.setAttribute('data-theme', theme);
+
+    // Only re-mount Bodymovin if the content/data actually changed or container is empty
+    const hasExistingLottie = previewRenderArea.querySelector('.lottie-graphic-root');
+    const dataKey = `${payload.data?.name || ''}::${payload.data?.subtitle || ''}::${accentColor || ''}::${(payload.lottieConfig || lottieConfig)?.overlayMode || ''}::${animData?.nm || ''}`;
+    if (!hasExistingLottie || previewRenderArea._lastLottieKey !== dataKey) {
+      previewRenderArea._lastLottieKey = dataKey;
+      previewRenderArea.innerHTML = '';
+      if (window.LottieEngine && animData) {
+        window.LottieEngine.renderLottieGraphic(
+          previewRenderArea,
+          animData,
+          data,
+          accentColor,
+          payload.lottieConfig || lottieConfig,
+          true
+        );
+      }
+    }
+    return;
+  }
+
+  // Reset standard preview container for non-Lottie templates
   previewRenderArea.className = 'w-full transform transition-all duration-150 origin-bottom-left';
   previewRenderArea.style.transform = `scale(${(0.9 * scale).toFixed(3)}) translate(${pgx}px, ${pgy}px)`;
   previewRenderArea.style.transformOrigin = 'bottom left';
   previewRenderArea.setAttribute('data-theme', theme);
+  delete previewRenderArea._lastLottieKey;
 
-  if (highlightElementToggle && highlightElementToggle.checked && posElementSelect && posElementSelect.value === '__entire_graphic__' && template !== 'lottie_motion') {
+  if (highlightElementToggle && highlightElementToggle.checked && posElementSelect && posElementSelect.value === '__entire_graphic__') {
     previewRenderArea.style.outline = '2px dashed #00f0ff';
     previewRenderArea.style.outlineOffset = '6px';
     previewRenderArea.style.borderRadius = '8px';
   } else {
     previewRenderArea.style.outline = 'none';
-  }
-
-  if (accentColor) {
-    previewRenderArea.style.setProperty('--primary', accentColor);
-    previewRenderArea.style.setProperty('--accent', accentColor);
-    previewRenderArea.style.setProperty('--stripe-color', accentColor);
-    previewRenderArea.style.setProperty('--glow-color', `${accentColor}66`);
-  } else {
-    previewRenderArea.style.removeProperty('--primary');
-    previewRenderArea.style.removeProperty('--accent');
-    previewRenderArea.style.removeProperty('--stripe-color');
-    previewRenderArea.style.removeProperty('--glow-color');
-  }
-
-  // Lottie Motion Graphic Preview
-  if (template === 'lottie_motion') {
-    previewRenderArea.innerHTML = '';
-    const animData = payload.lottieData || currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
-    if (window.LottieEngine && animData) {
-      window.LottieEngine.renderLottieGraphic(
-        previewRenderArea,
-        animData,
-        data,
-        accentColor,
-        payload.lottieConfig || lottieConfig,
-        true
-      );
-    }
-    return;
   }
 
   // Custom Vector SVG Template Preview
@@ -2509,6 +2533,8 @@ function refreshCurrentPreview() {
           photo: mapped.photo,
           stats: mapped.stats
         },
+        lottieData: currentLottieData,
+        lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
         svgMarkup: currentSvgText,
         layerValues: computeSvgLayerValues(currentRaw, mapped, category)
       });
@@ -2517,6 +2543,8 @@ function refreshCurrentPreview() {
     renderConfidencePreview({
       template,
       theme,
+      lottieData: currentLottieData,
+      lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
       svgMarkup: currentSvgText,
       layerValues: {}
     });

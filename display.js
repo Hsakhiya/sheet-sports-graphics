@@ -831,10 +831,18 @@ function applyGlobalGraphicOffset(offsets) {
     wrapper.style.setProperty('--global-offset-x', `${gx}px`);
     wrapper.style.setProperty('--global-offset-y', `${gy}px`);
     wrapper.style.setProperty('--global-scale', `${scale}`);
-    wrapper.style.left = `calc(60px + ${gx}px)`;
-    wrapper.style.bottom = `calc(50px - ${gy}px)`;
-    wrapper.style.transform = `scale(${scale})`;
-    wrapper.style.transformOrigin = 'bottom left';
+
+    if (wrapper.classList.contains('lottie-broadcast-fullframe')) {
+      wrapper.style.left = '0px';
+      wrapper.style.bottom = '0px';
+      wrapper.style.transformOrigin = '15% 85%';
+      wrapper.style.transform = `translate(${gx}px, ${gy}px) scale(${scale})`;
+    } else {
+      wrapper.style.left = `calc(60px + ${gx}px)`;
+      wrapper.style.bottom = `calc(50px - ${gy}px)`;
+      wrapper.style.transform = `scale(${scale})`;
+      wrapper.style.transformOrigin = 'bottom left';
+    }
   }
 }
 
@@ -855,7 +863,18 @@ function showGraphic(payload) {
     lottieConfig
   } = payload;
 
-  // Apply Global Lower Third Screen Offset
+  const animData = lottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+  const isFullFrameLottie = (template === 'lottie_motion') && animData && (animData.w >= 1280 || animData.h >= 720);
+
+  if (isFullFrameLottie) {
+    wrapper.classList.remove('broadcast-wrapper');
+    wrapper.classList.add('lottie-broadcast-fullframe');
+  } else {
+    wrapper.classList.remove('lottie-broadcast-fullframe');
+    wrapper.classList.add('broadcast-wrapper');
+  }
+
+  // Apply Global Lower Third Screen Offset & Scale
   applyGlobalGraphicOffset(elementOffsets);
 
   // Set Theme
@@ -882,7 +901,6 @@ function showGraphic(payload) {
   // Build Graphic Markup / Canvas
   if (template === 'lottie_motion') {
     wrapper.innerHTML = '';
-    const animData = lottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
     if (window.LottieEngine && animData) {
       window.LottieEngine.renderLottieGraphic(wrapper, animData, data, accentColor, lottieConfig || {}, false);
     }
@@ -894,9 +912,14 @@ function showGraphic(payload) {
 
   // Animate Entrance cleanly
   wrapper.classList.remove('hidden', 'anim-exit');
-  wrapper.classList.remove('anim-enter');
-  void wrapper.offsetWidth; // Force CSS reflow to ensure clean animation execution
-  wrapper.classList.add('anim-enter');
+  if (isFullFrameLottie) {
+    wrapper.classList.remove('anim-enter');
+    wrapper.style.opacity = '1';
+  } else {
+    wrapper.classList.remove('anim-enter');
+    void wrapper.offsetWidth; // Force CSS reflow to ensure clean animation execution
+    wrapper.classList.add('anim-enter');
+  }
 
   if (payload.emitAudio !== false) {
     playBroadcastSwoosh();
@@ -914,7 +937,7 @@ function showGraphic(payload) {
 let isHidingGraphic = false;
 
 function hideGraphic() {
-  if (wrapper.classList.contains('hidden') && !wrapper.classList.contains('anim-enter')) return;
+  if (wrapper.classList.contains('hidden') && !wrapper.classList.contains('anim-enter') && !wrapper.classList.contains('lottie-broadcast-fullframe')) return;
   if (isHidingGraphic) return;
 
   isHidingGraphic = true;
@@ -930,6 +953,7 @@ function hideGraphic() {
   setTimeout(() => {
     wrapper.classList.add('hidden');
     wrapper.classList.remove('anim-exit');
+    wrapper.style.opacity = '';
     if (window.LottieEngine) {
       window.LottieEngine.destroyAllLottieInstances();
     }
