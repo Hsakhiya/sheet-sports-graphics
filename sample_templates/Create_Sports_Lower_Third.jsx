@@ -179,8 +179,18 @@
     // Open the composition in viewer
     comp.openInViewer();
 
+    // Auto-save project file as Sports_Lower_Third.aep
+    try {
+      var scriptDir = (new File($.fileName)).parent;
+      var aepFile = new File(scriptDir.fsName + "/Sports_Lower_Third.aep");
+      app.project.save(aepFile);
+    } catch (saveErr) {
+      // Continue if save is skipped
+    }
+
     alert(
       "SUCCESS! Sports Lower-Third Composition Created.\n\n" +
+      "Saved to: sample_templates/Sports_Lower_Third.aep\n\n" +
       "Layers Configured for Lottie Export:\n" +
       " • 'Name' (Athlete Name)\n" +
       " • 'Team' (Subtitle)\n" +
