@@ -77,26 +77,26 @@
 /* Lower Third Animations */
 @keyframes slideInFromLeft {
   0% {
-    transform: translate3d(-110%, 0, 0);
+    transform: scale(var(--global-scale, 1)) translate3d(-110%, 0, 0);
     opacity: 0;
   }
   70% {
-    transform: translate3d(2%, 0, 0);
+    transform: scale(var(--global-scale, 1)) translate3d(2%, 0, 0);
     opacity: 1;
   }
   100% {
-    transform: translate3d(0, 0, 0);
+    transform: scale(var(--global-scale, 1)) translate3d(0, 0, 0);
     opacity: 1;
   }
 }
 
 @keyframes slideOutToLeft {
   0% {
-    transform: translate3d(0, 0, 0);
+    transform: scale(var(--global-scale, 1)) translate3d(0, 0, 0);
     opacity: 1;
   }
   100% {
-    transform: translate3d(-115%, 0, 0);
+    transform: scale(var(--global-scale, 1)) translate3d(-115%, 0, 0);
     opacity: 0;
   }
 }
@@ -189,8 +189,9 @@
   max-width: 900px;
   min-width: 580px;
   filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.65));
-  z-index: 100;
-  transition: left 0.15s ease-out, bottom 0.15s ease-out, opacity 0.3s ease;
+  transform: scale(var(--global-scale, 1));
+  transform-origin: bottom left;
+  transition: left 0.15s ease-out, bottom 0.15s ease-out, transform 0.15s ease-out, opacity 0.3s ease;
 }
 
 /* Compact scale for small screens */

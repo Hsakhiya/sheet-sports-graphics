@@ -131,6 +131,9 @@ const posXSlider = document.getElementById('pos-x-slider');
 const posYSlider = document.getElementById('pos-y-slider');
 const posXInput = document.getElementById('pos-x-input');
 const posYInput = document.getElementById('pos-y-input');
+const posScaleSlider = document.getElementById('pos-scale-slider');
+const posScaleInput = document.getElementById('pos-scale-input');
+const btnScaleReset100 = document.getElementById('btn-scale-reset-100');
 const highlightElementToggle = document.getElementById('highlight-element-toggle');
 
 // Custom element offsets state: { [elementId]: { x: number, y: number } }
@@ -1121,17 +1124,19 @@ function renderConfidencePreview(payload) {
   const subtitle = data.subtitle || 'TEAM';
   const number = data.number || '';
 
-  // Calculate global lower third screen offset
-  const globalOffset = (elementOffsets && elementOffsets['__entire_graphic__']) || { x: 0, y: 0 };
+  // Calculate global lower third screen offset & scale
+  const globalOffset = (elementOffsets && elementOffsets['__entire_graphic__']) || { x: 0, y: 0, scale: 1.0 };
   const gx = parseFloat(globalOffset.x || 0);
   const gy = parseFloat(globalOffset.y || 0);
+  const scale = parseFloat(globalOffset.scale !== undefined ? globalOffset.scale : 1.0);
 
   // Scale offset proportionally to confidence preview size (approx 35% of broadcast canvas)
   const pgx = (gx * 0.35).toFixed(1);
   const pgy = (gy * 0.35).toFixed(1);
 
   previewRenderArea.className = 'w-full transform transition-all duration-150 origin-bottom-left';
-  previewRenderArea.style.transform = `scale(0.9) translate(${pgx}px, ${pgy}px)`;
+  previewRenderArea.style.transform = `scale(${(0.9 * scale).toFixed(3)}) translate(${pgx}px, ${pgy}px)`;
+  previewRenderArea.style.transformOrigin = 'bottom left';
   previewRenderArea.setAttribute('data-theme', theme);
 
   if (highlightElementToggle && highlightElementToggle.checked && posElementSelect && posElementSelect.value === '__entire_graphic__' && template !== 'lottie_motion') {
@@ -2383,10 +2388,11 @@ function updateElementPositionDropdown() {
 
 function syncControlsToSelectedElement() {
   const selectedId = posElementSelect ? posElementSelect.value : '';
-  const offset = (selectedId && elementOffsets[selectedId]) || { x: 0, y: 0 };
+  const offset = (selectedId && elementOffsets[selectedId]) || { x: 0, y: 0, scale: 1.0 };
 
   const x = Math.round(offset.x || 0);
   const y = Math.round(offset.y || 0);
+  const scalePercent = offset.scale !== undefined ? Math.round(offset.scale * 100) : 100;
 
   // Dynamic slider range: broader range for entire graphic, finer range for sub-elements
   if (selectedId === '__entire_graphic__') {
@@ -2401,6 +2407,8 @@ function syncControlsToSelectedElement() {
   if (posXInput) posXInput.value = x;
   if (posYSlider) posYSlider.value = y;
   if (posYInput) posYInput.value = y;
+  if (posScaleSlider) posScaleSlider.value = scalePercent;
+  if (posScaleInput) posScaleInput.value = scalePercent;
 }
 
 function updateSelectedElementOffset(x, y, isDelta = false) {
@@ -2408,7 +2416,7 @@ function updateSelectedElementOffset(x, y, isDelta = false) {
   if (!selectedId) return;
 
   if (!elementOffsets[selectedId]) {
-    elementOffsets[selectedId] = { x: 0, y: 0 };
+    elementOffsets[selectedId] = { x: 0, y: 0, scale: 1.0 };
   }
 
   if (isDelta) {
@@ -2425,8 +2433,43 @@ function updateSelectedElementOffset(x, y, isDelta = false) {
   elementOffsets[selectedId].x = Math.max(-maxLimitX, Math.min(maxLimitX, elementOffsets[selectedId].x));
   elementOffsets[selectedId].y = Math.max(-maxLimitY, Math.min(maxLimitY, elementOffsets[selectedId].y));
 
-  // If offset is 0,0, remove it to keep state clean
-  if (elementOffsets[selectedId].x === 0 && elementOffsets[selectedId].y === 0) {
+  // If offset is 0,0 and scale is 1.0, remove it to keep state clean
+  const isDefault = elementOffsets[selectedId].x === 0 &&
+                    elementOffsets[selectedId].y === 0 &&
+                    (elementOffsets[selectedId].scale === undefined || elementOffsets[selectedId].scale === 1.0);
+  if (isDefault) {
+    delete elementOffsets[selectedId];
+  }
+
+  try {
+    localStorage.setItem('sports_graphic_element_offsets', JSON.stringify(elementOffsets));
+  } catch (e) {}
+
+  syncControlsToSelectedElement();
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
+  refreshCurrentPreview();
+}
+
+function updateSelectedElementScale(scaleVal, isDelta = false) {
+  const selectedId = posElementSelect ? posElementSelect.value : '';
+  if (!selectedId) return;
+
+  if (!elementOffsets[selectedId]) {
+    elementOffsets[selectedId] = { x: 0, y: 0, scale: 1.0 };
+  }
+
+  const currentScale = elementOffsets[selectedId].scale !== undefined ? elementOffsets[selectedId].scale : 1.0;
+  let currentPercent = Math.round(currentScale * 100);
+  let newPercent = isDelta ? Math.round(currentPercent + scaleVal) : Math.round(scaleVal);
+  newPercent = Math.max(25, Math.min(250, newPercent));
+
+  elementOffsets[selectedId].scale = parseFloat((newPercent / 100).toFixed(2));
+
+  // If offset is 0,0 and scale is 1.0, remove it to keep state clean
+  const isDefault = (elementOffsets[selectedId].x || 0) === 0 &&
+                    (elementOffsets[selectedId].y || 0) === 0 &&
+                    elementOffsets[selectedId].scale === 1.0;
+  if (isDefault) {
     delete elementOffsets[selectedId];
   }
 
@@ -2514,6 +2557,30 @@ posYInput?.addEventListener('change', (e) => {
   updateSelectedElementOffset(parseFloat(posXInput?.value || 0), y, false);
 });
 
+// Scale Control Event Listeners
+posScaleSlider?.addEventListener('input', (e) => {
+  const percent = parseFloat(e.target.value) || 100;
+  if (posScaleInput) posScaleInput.value = percent;
+  updateSelectedElementScale(percent, false);
+});
+
+posScaleInput?.addEventListener('change', (e) => {
+  const percent = parseFloat(e.target.value) || 100;
+  if (posScaleSlider) posScaleSlider.value = percent;
+  updateSelectedElementScale(percent, false);
+});
+
+document.querySelectorAll('.btn-scale-nudge').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const delta = parseFloat(btn.dataset.delta) || 0;
+    updateSelectedElementScale(delta, true);
+  });
+});
+
+btnScaleReset100?.addEventListener('click', () => {
+  updateSelectedElementScale(100, false);
+});
+
 document.querySelectorAll('.btn-nudge').forEach(btn => {
   btn.addEventListener('click', () => {
     const axis = btn.dataset.axis;
@@ -2539,7 +2606,16 @@ document.querySelectorAll('.btn-dpad').forEach(btn => {
 });
 
 btnResetElementPos?.addEventListener('click', () => {
-  updateSelectedElementOffset(0, 0, false);
+  const selectedId = posElementSelect ? posElementSelect.value : '';
+  if (selectedId && elementOffsets[selectedId]) {
+    delete elementOffsets[selectedId];
+    try {
+      localStorage.setItem('sports_graphic_element_offsets', JSON.stringify(elementOffsets));
+    } catch (e) {}
+    syncControlsToSelectedElement();
+    sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
+    refreshCurrentPreview();
+  }
 });
 
 btnResetAllPositions?.addEventListener('click', () => {

@@ -653,6 +653,28 @@
                 <button class="btn-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-axis="y" data-delta="10">+10</button>
               </div>
             </div>
+
+            <!-- Scale / Size Control -->
+            <div class="flex flex-col justify-between bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/60 col-span-1 sm:col-span-2">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-sports font-bold tracking-wider uppercase text-cyan-400 flex items-center gap-1.5">
+                  <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                  <span>Scale (Size / Zoom)</span>
+                </span>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="pos-scale-input" value="100" min="20" max="300" step="1" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-cyan-400 outline-none">
+                  <span class="text-[11px] text-slate-500">%</span>
+                </div>
+              </div>
+              <input type="range" id="pos-scale-slider" min="25" max="250" step="1" value="100" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-2">
+              <div class="flex items-center gap-1">
+                <button class="btn-scale-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-delta="-20">-20%</button>
+                <button class="btn-scale-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-delta="-5">-5%</button>
+                <button id="btn-scale-reset-100" type="button" title="Reset Scale to 100%" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-cyan-500/20 border border-slate-800 text-[10px] font-mono text-cyan-400 font-bold transition active:scale-95">100%</button>
+                <button class="btn-scale-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-delta="5">+5%</button>
+                <button class="btn-scale-nudge px-1.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" data-delta="20">+20%</button>
+              </div>
+            </div>
           </div>
 
           <!-- Micro-Nudge D-Pad -->

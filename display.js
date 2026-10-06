@@ -820,17 +820,21 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
   }
 }
 
-// Apply Global Lower Third Position Offsets to broadcast-wrapper
+// Apply Global Lower Third Position Offsets & Scale to broadcast-wrapper
 function applyGlobalGraphicOffset(offsets) {
-  const global = (offsets && offsets['__entire_graphic__']) || { x: 0, y: 0 };
+  const global = (offsets && offsets['__entire_graphic__']) || { x: 0, y: 0, scale: 1.0 };
   const gx = parseFloat(global.x || 0);
   const gy = parseFloat(global.y || 0);
+  const scale = parseFloat(global.scale !== undefined ? global.scale : 1.0);
 
   if (wrapper) {
     wrapper.style.setProperty('--global-offset-x', `${gx}px`);
     wrapper.style.setProperty('--global-offset-y', `${gy}px`);
+    wrapper.style.setProperty('--global-scale', `${scale}`);
     wrapper.style.left = `calc(60px + ${gx}px)`;
     wrapper.style.bottom = `calc(50px - ${gy}px)`;
+    wrapper.style.transform = `scale(${scale})`;
+    wrapper.style.transformOrigin = 'bottom left';
   }
 }
 
