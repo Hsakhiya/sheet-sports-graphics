@@ -76,11 +76,16 @@
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
 
-    // If template has baked glyphs with only uppercase letters, uppercase injected text to prevent missing character drops
-    const hasGlyphs = Array.isArray(cloned.chars) && cloned.chars.length > 0;
-    const glyphChars = hasGlyphs ? cloned.chars.map(c => c.ch) : [];
-    const hasLowercaseGlyphs = glyphChars.some(c => c >= 'a' && c <= 'z');
-    const shouldUppercase = hasGlyphs && !hasLowercaseGlyphs;
+    // If template has baked glyphs that are missing most of the alphabet (< 60 chars),
+    // remove the restricted glyph table so lottie-web renders native SVG text without skipping lowercase letters!
+    if (Array.isArray(cloned.chars) && cloned.chars.length < 60) {
+      delete cloned.chars;
+      if (cloned.fonts && Array.isArray(cloned.fonts.list)) {
+        cloned.fonts.list.forEach(f => {
+          f.fFamily = f.fFamily ? `${f.fFamily}, Montserrat, Arial, sans-serif` : 'Montserrat, Arial, sans-serif';
+        });
+      }
+    }
 
     let name = rowData.name || 'ATHLETE NAME';
     let subtitle = rowData.subtitle || 'TEAM / CLUB';
@@ -88,14 +93,6 @@
     let category = rowData.category || 'LIVE BROADCAST';
     let stat1 = rowData.stats?.[0] ? `${rowData.stats[0].label}: ${rowData.stats[0].value}` : '';
     let stat2 = rowData.stats?.[1] ? `${rowData.stats[1].label}: ${rowData.stats[1].value}` : '';
-
-    if (shouldUppercase) {
-      name = name.toUpperCase();
-      subtitle = subtitle.toUpperCase();
-      category = category.toUpperCase();
-      stat1 = stat1.toUpperCase();
-      stat2 = stat2.toUpperCase();
-    }
 
     function updateLayers(layers) {
       if (!Array.isArray(layers)) return;
@@ -150,8 +147,14 @@
     function clearText(layers) {
       if (!Array.isArray(layers)) return;
       layers.forEach(layer => {
-        if (layer.t?.d?.k?.[0]?.s?.t !== undefined) {
-          layer.t.d.k[0].s.t = '';
+        if (layer.ty === 5 || layer.t?.d?.k?.[0]?.s?.t !== undefined) {
+          layer.hd = true; // Fully hide the text layer
+          if (layer.t?.d?.k?.[0]?.s) {
+            layer.t.d.k[0].s.t = '';
+          }
+          if (layer.ks?.o) {
+            layer.ks.o = { a: 0, k: 0 };
+          }
         }
       });
     }

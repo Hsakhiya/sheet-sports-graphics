@@ -2280,6 +2280,10 @@ selectLottiePreset?.addEventListener('change', (e) => {
 // Mode Selector
 selectLottieMode?.addEventListener('change', (e) => {
   lottieConfig.overlayMode = e.target.value;
+  if (selectTemplate.value !== 'lottie_motion') {
+    selectTemplate.value = 'lottie_motion';
+    selectTemplate.dispatchEvent(new Event('change'));
+  }
   refreshLottiePreview();
 });
 
