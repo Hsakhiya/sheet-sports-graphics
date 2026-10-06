@@ -208,7 +208,51 @@ function handleRequest(req, res) {
   }
 
   // -----------------------------------------------------------
-  // 5. Static File Serving
+  // 5. API: Serve Local Files from Host Machine (/api/local-file?path=...)
+  // Allows users to copy-paste local disk paths directly into Google Sheet
+  // -----------------------------------------------------------
+  if (reqUrl === '/api/local-file') {
+    let targetPath = '';
+    try {
+      const parsedUrl = new URL(req.url, `http://localhost:${PORT}`);
+      targetPath = parsedUrl.searchParams.get('path') || '';
+    } catch (e) {
+      targetPath = (queryStr || '').replace(/^path=/, '');
+    }
+
+    if (!targetPath) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=UTF-8' });
+      res.end('Missing path query parameter');
+      return;
+    }
+
+    let cleanPath = targetPath.trim().replace(/^['"]|['"]$/g, '');
+    cleanPath = path.normalize(cleanPath);
+
+    fs.stat(cleanPath, (err, stats) => {
+      if (err || !stats.isFile()) {
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=UTF-8' });
+        res.end(`Local file not found: ${cleanPath}`);
+        return;
+      }
+
+      const ext = path.extname(cleanPath).toLowerCase();
+      const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+      res.writeHead(200, {
+        'Content-Type': contentType,
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      });
+
+      const stream = fs.createReadStream(cleanPath);
+      stream.pipe(res);
+    });
+    return;
+  }
+
+  // -----------------------------------------------------------
+  // 6. Static File Serving
   // -----------------------------------------------------------
   let normalizedUrl = reqUrl === '/' ? '/index.html' : reqUrl;
   const safePath = path.normalize(normalizedUrl).replace(/^(\.\.[\/\\])+/, '');

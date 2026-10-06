@@ -159,6 +159,7 @@ const colorCache = new Map();
 function normalizeImageUrl(url) {
   if (!url || typeof url !== 'string') return '';
   let clean = url.trim().replace(/^['"]|['"]$/g, '');
+  if (!clean) return '';
 
   // Google Drive share / view links -> direct CDN image URL
   const gDriveMatch = clean.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_\-]+)/);
@@ -169,6 +170,27 @@ function normalizeImageUrl(url) {
   // Dropbox links: dl=0 -> raw=1
   if (clean.includes('dropbox.com')) {
     return clean.replace(/[?&]dl=0/, '?raw=1');
+  }
+
+  // Local Windows / Mac disk paths (e.g. C:\Users\..., file:///C:/..., /Users/...)
+  const isWindowsPath = /^[a-zA-Z]:[\\\/]/.test(clean);
+  const isFileUri = /^file:\/\/\//i.test(clean);
+  const isUnixAbsPath = /^\/(Users|home|var|tmp|opt|Volumes)\//i.test(clean);
+
+  if (isWindowsPath || isFileUri || isUnixAbsPath) {
+    let diskPath = clean;
+    if (isFileUri) {
+      diskPath = decodeURIComponent(clean.replace(/^file:\/\/\//i, ''));
+    }
+    return `/api/local-file?path=${encodeURIComponent(diskPath)}`;
+  }
+
+  // Relative file path inside project directory (e.g. "images/player.png" -> "/images/player.png")
+  if (!clean.startsWith('http://') && !clean.startsWith('https://') && !clean.startsWith('data:') && !clean.startsWith('blob:') && !clean.startsWith('/')) {
+    const isImageFile = /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(clean);
+    if (isImageFile) {
+      return `/${clean}`;
+    }
   }
 
   return clean;
