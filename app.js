@@ -1134,7 +1134,7 @@ function renderConfidencePreview(payload) {
   previewRenderArea.style.transform = `scale(0.9) translate(${pgx}px, ${pgy}px)`;
   previewRenderArea.setAttribute('data-theme', theme);
 
-  if (highlightElementToggle && highlightElementToggle.checked && posElementSelect && posElementSelect.value === '__entire_graphic__') {
+  if (highlightElementToggle && highlightElementToggle.checked && posElementSelect && posElementSelect.value === '__entire_graphic__' && template !== 'lottie_motion') {
     previewRenderArea.style.outline = '2px dashed #00f0ff';
     previewRenderArea.style.outlineOffset = '6px';
     previewRenderArea.style.borderRadius = '8px';
