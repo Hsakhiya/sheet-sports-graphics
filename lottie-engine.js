@@ -76,12 +76,26 @@
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
 
-    const name = rowData.name || 'ATHLETE NAME';
-    const subtitle = rowData.subtitle || 'TEAM / CLUB';
-    const number = rowData.number ? String(rowData.number) : '';
-    const category = rowData.category || 'LIVE BROADCAST';
-    const stat1 = rowData.stats?.[0] ? `${rowData.stats[0].label}: ${rowData.stats[0].value}` : '';
-    const stat2 = rowData.stats?.[1] ? `${rowData.stats[1].label}: ${rowData.stats[1].value}` : '';
+    // If template has baked glyphs with only uppercase letters, uppercase injected text to prevent missing character drops
+    const hasGlyphs = Array.isArray(cloned.chars) && cloned.chars.length > 0;
+    const glyphChars = hasGlyphs ? cloned.chars.map(c => c.ch) : [];
+    const hasLowercaseGlyphs = glyphChars.some(c => c >= 'a' && c <= 'z');
+    const shouldUppercase = hasGlyphs && !hasLowercaseGlyphs;
+
+    let name = rowData.name || 'ATHLETE NAME';
+    let subtitle = rowData.subtitle || 'TEAM / CLUB';
+    let number = rowData.number ? String(rowData.number) : '';
+    let category = rowData.category || 'LIVE BROADCAST';
+    let stat1 = rowData.stats?.[0] ? `${rowData.stats[0].label}: ${rowData.stats[0].value}` : '';
+    let stat2 = rowData.stats?.[1] ? `${rowData.stats[1].label}: ${rowData.stats[1].value}` : '';
+
+    if (shouldUppercase) {
+      name = name.toUpperCase();
+      subtitle = subtitle.toUpperCase();
+      category = category.toUpperCase();
+      stat1 = stat1.toUpperCase();
+      stat2 = stat2.toUpperCase();
+    }
 
     function updateLayers(layers) {
       if (!Array.isArray(layers)) return;
@@ -124,6 +138,29 @@
       });
     }
 
+    return cloned;
+  }
+
+  // -----------------------------------------------------------
+  // Helper: Blank out internal Lottie text layers for Overlay Mode
+  // -----------------------------------------------------------
+  function blankOutLottieTextLayers(lottieJson) {
+    if (!lottieJson) return null;
+    const cloned = JSON.parse(JSON.stringify(lottieJson));
+    function clearText(layers) {
+      if (!Array.isArray(layers)) return;
+      layers.forEach(layer => {
+        if (layer.t?.d?.k?.[0]?.s?.t !== undefined) {
+          layer.t.d.k[0].s.t = '';
+        }
+      });
+    }
+    clearText(cloned.layers);
+    if (Array.isArray(cloned.assets)) {
+      cloned.assets.forEach(asset => {
+        if (Array.isArray(asset.layers)) clearText(asset.layers);
+      });
+    }
     return cloned;
   }
 
@@ -231,7 +268,8 @@
     if (mode === 'in_animation') {
       animationDataToUse = injectDataIntoLottieJson(lottieData, rowData, config.mappings || {});
     } else {
-      // Overlay mode: inject the typography layer over the motion graphics
+      // Overlay mode: blank out internal text layers in Lottie so they don't clash or render initials behind the overlay
+      animationDataToUse = blankOutLottieTextLayers(lottieData);
       const overlayEl = document.createElement('div');
       overlayEl.className = 'lottie-typography-layer relative z-10 w-full h-full';
       overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview);
@@ -286,6 +324,7 @@
   global.LottieEngine = {
     extractLottieTextLayers,
     injectDataIntoLottieJson,
+    blankOutLottieTextLayers,
     buildBroadcastOverlayHTML,
     renderLottieGraphic,
     destroyAllLottieInstances

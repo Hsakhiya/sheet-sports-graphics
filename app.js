@@ -2168,6 +2168,22 @@ function updateLottieMappingUI() {
 
   if (lottieMappingSection) lottieMappingSection.classList.remove('hidden');
 
+  const hasBakedGlyphs = currentLottieData && Array.isArray(currentLottieData.chars) && currentLottieData.chars.length > 0;
+  if (hasBakedGlyphs) {
+    const glyphNotice = document.createElement('div');
+    glyphNotice.className = 'p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2 mb-2.5';
+    glyphNotice.innerHTML = `
+      <span class="text-sm shrink-0">⚠️</span>
+      <div>
+        <strong class="font-bold">Bodymovin "Glyphs" Detected:</strong> This template has pre-baked vector glyphs (${currentLottieData.chars.length} characters). Lowercase letters or unexported characters will not render in "In-Animation" mode.
+        <div class="text-slate-300 mt-1">
+          💡 <strong class="text-white">Recommended Fix:</strong> Select <strong>"Motion Base + Broadcast Typography"</strong> above, or re-export from After Effects with <strong>"Glyphs" unchecked</strong>.
+        </div>
+      </div>
+    `;
+    lottieMappingContainer.appendChild(glyphNotice);
+  }
+
   layers.forEach((layer) => {
     const key = layer.name;
     const currentMapping = lottieLayerMappings[key] || '';
