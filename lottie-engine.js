@@ -192,7 +192,7 @@
     const stats = Array.isArray(data.stats) ? data.stats : [];
 
     const avatarHtml = photo
-      ? `<img src="${photo}" alt="${name}" class="w-full h-full object-cover" onerror="this.outerHTML='${getFallbackAvatar(name, number).replace(/'/g, "\\'")}'" />`
+      ? `<img src="${photo}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white font-sports font-black text-2xl"><span class="drop-shadow-md">${number || (name || 'SP').slice(0, 2).toUpperCase()}</span></div>`
       : getFallbackAvatar(name, number);
 
     const statsHtml = stats.length > 0 ? `
@@ -346,4 +346,8 @@
     destroyAllLottieInstances
   };
 
-})(typeof window !== 'undefined' ? window : this);
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = global.LottieEngine;
+  }
+
+})(typeof window !== 'undefined' ? window : (typeof global !== 'undefined' ? global : this));
