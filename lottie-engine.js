@@ -26,6 +26,9 @@
       return clean.replace(/[?&]dl=0/, '?raw=1');
     }
 
+    // Clean leading backslashes before drive letter if present
+    clean = clean.replace(/^[\\\/]+([a-zA-Z]:)/, '$1');
+
     // Local Windows / Mac disk paths (e.g. C:\Users\..., file:///C:/..., /Users/...)
     const isWindowsPath = /^[a-zA-Z]:[\\\/]/.test(clean);
     const isFileUri = /^file:\/\/\//i.test(clean);
@@ -36,7 +39,10 @@
       if (isFileUri) {
         diskPath = decodeURIComponent(clean.replace(/^file:\/\/\//i, ''));
       }
-      return `/api/local-file?path=${encodeURIComponent(diskPath)}`;
+      const hostPrefix = (typeof window !== 'undefined' && window.location.protocol.startsWith('http'))
+        ? ''
+        : 'http://localhost:3000';
+      return `${hostPrefix}/api/local-file?path=${encodeURIComponent(diskPath)}`;
     }
 
     // Relative file path inside project directory (e.g. "images/player.png" -> "/images/player.png")

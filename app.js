@@ -158,7 +158,7 @@ const colorCache = new Map();
 
 function normalizeImageUrl(url) {
   if (!url || typeof url !== 'string') return '';
-  let clean = url.trim().replace(/^['"]|['"]$/g, '');
+  let clean = url.trim().replace(/^['"]+|['"]+$/g, '');
   if (!clean) return '';
 
   // Google Drive share / view links -> direct CDN image URL
@@ -172,6 +172,9 @@ function normalizeImageUrl(url) {
     return clean.replace(/[?&]dl=0/, '?raw=1');
   }
 
+  // Clean leading backslashes before drive letter if present
+  clean = clean.replace(/^[\\\/]+([a-zA-Z]:)/, '$1');
+
   // Local Windows / Mac disk paths (e.g. C:\Users\..., file:///C:/..., /Users/...)
   const isWindowsPath = /^[a-zA-Z]:[\\\/]/.test(clean);
   const isFileUri = /^file:\/\/\//i.test(clean);
@@ -182,7 +185,10 @@ function normalizeImageUrl(url) {
     if (isFileUri) {
       diskPath = decodeURIComponent(clean.replace(/^file:\/\/\//i, ''));
     }
-    return `/api/local-file?path=${encodeURIComponent(diskPath)}`;
+    const hostPrefix = (typeof window !== 'undefined' && window.location.protocol.startsWith('http'))
+      ? ''
+      : 'http://localhost:3000';
+    return `${hostPrefix}/api/local-file?path=${encodeURIComponent(diskPath)}`;
   }
 
   // Relative file path inside project directory (e.g. "images/player.png" -> "/images/player.png")
@@ -692,7 +698,10 @@ function setupColumnMappings() {
   mapFields.name.value = findBestColumnMatch(['name', 'player', 'athlete', 'title', 'full name', 'item']) || sheetColumns[0] || '';
   mapFields.subtitle.value = findBestColumnMatch(['team', 'club', 'country', 'subtitle', 'role', 'franchise', 'org']) || sheetColumns[1] || '';
   mapFields.number.value = findBestColumnMatch(['number', 'jersey', '#', 'no', 'jersey_no']) || '';
-  mapFields.photo.value = findBestColumnMatch(['photo', 'image', 'avatar', 'picture', 'headshot', 'img', 'url']) || '';
+  mapFields.photo.value = findBestColumnMatch([
+    'photo', 'image', 'logo', 'team logo', 'teamlogo', 'club logo', 'crest', 'badge',
+    'avatar', 'picture', 'pic', 'headshot', 'img', 'icon', 'url', 'path', 'file'
+  ]) || '';
   if (mapFields.color) {
     mapFields.color.value = findBestColumnMatch(['color', 'accent', 'team_color', 'theme_color', 'hex', 'primary']) || '';
   }
@@ -738,11 +747,25 @@ function getMappedRowData(row) {
     }
   });
 
+  // Smart auto-detection fallback for photo / logo if column mapping wasn't manually set
+  let rawPhoto = photoCol ? (row[photoCol] || '') : '';
+  if (!rawPhoto && row) {
+    for (const key of Object.keys(row)) {
+      const lk = key.toLowerCase().trim();
+      if (/photo|image|logo|crest|badge|avatar|picture|headshot|img|pic/i.test(lk)) {
+        if (row[key]) {
+          rawPhoto = row[key];
+          break;
+        }
+      }
+    }
+  }
+
   return {
     name: nameCol ? (row[nameCol] || '') : (row.Name || row.name || 'Unknown'),
     subtitle: subCol ? (row[subCol] || '') : (row.Team || row.team || ''),
     number: numCol ? (row[numCol] || '') : (row.Number || row.number || ''),
-    photo: normalizeImageUrl(photoCol ? (row[photoCol] || '') : (row.Photo || row.photo || '')),
+    photo: normalizeImageUrl(rawPhoto),
     color: colorCol ? (row[colorCol] || '') : (row.Color || row.color || ''),
     stats,
     raw: row
@@ -1054,6 +1077,7 @@ window.addEventListener('keydown', (e) => {
 document.getElementById('btn-manual-push')?.addEventListener('click', async () => {
   const name = document.getElementById('manual-name').value.trim();
   const team = document.getElementById('manual-team').value.trim();
+  const photo = normalizeImageUrl(document.getElementById('manual-photo')?.value.trim() || '');
   if (!name) return;
 
   activeRowIndex = null;
@@ -1061,7 +1085,7 @@ document.getElementById('btn-manual-push')?.addEventListener('click', async () =
   const theme = selectTheme.value;
   const duration = parseInt(selectDuration.value, 10);
   const categoryTag = inputCategoryTag.value || 'LIVE BROADCAST';
-  const { accentColor } = await resolveAccentColor({ name, subtitle: team }, theme);
+  const { accentColor } = await resolveAccentColor({ name, subtitle: team, photo }, theme);
 
   const payload = {
     msgId: generateMsgId('TAKE'),
@@ -1076,7 +1100,7 @@ document.getElementById('btn-manual-push')?.addEventListener('click', async () =
       name,
       subtitle: team,
       number: '',
-      photo: '',
+      photo,
       stats: []
     }
   };

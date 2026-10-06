@@ -226,16 +226,19 @@ function handleRequest(req, res) {
       return;
     }
 
-    let cleanPath = targetPath.trim().replace(/^['"]|['"]$/g, '');
+    let cleanPath = targetPath.trim().replace(/^['"]+|['"]+$/g, '');
+    cleanPath = cleanPath.replace(/^[\\\/]+([a-zA-Z]:)/, '$1');
     cleanPath = path.normalize(cleanPath);
 
     fs.stat(cleanPath, (err, stats) => {
       if (err || !stats.isFile()) {
+        console.warn('[Local File Bridge] 404 Not Found:', cleanPath);
         res.writeHead(404, { 'Content-Type': 'text/plain; charset=UTF-8' });
         res.end(`Local file not found: ${cleanPath}`);
         return;
       }
 
+      console.log(`[Local File Bridge] 200 OK: ${cleanPath} (${stats.size} bytes)`);
       const ext = path.extname(cleanPath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
