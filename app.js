@@ -111,9 +111,9 @@ const lottieMappingContainer = document.getElementById('lottie-mapping-container
 const lottieLayersCount = document.getElementById('lottie-layers-count');
 const optionCustomLottie = document.getElementById('option-custom-lottie');
 
-let currentLottiePresetId = 'velocity_crimson';
-let currentLottieData = (typeof window !== 'undefined' && window.LOTTIE_PRESETS?.velocity_crimson?.data) || null;
-let currentLottieFilename = 'velocity_crimson.json';
+let currentLottiePresetId = 'sports_lower_third_with_photo';
+let currentLottieData = (typeof window !== 'undefined' && (window.LOTTIE_PRESETS?.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS?.velocity_crimson?.data)) || null;
+let currentLottieFilename = 'sports_lower_third_with_photo.json';
 let lottieLayerMappings = {};
 let lottieConfig = {
   overlayMode: 'overlay',
@@ -1015,7 +1015,7 @@ async function takeRowOnAir(index, emitAudio = true) {
 
   // Lottie Motion Graphic Template
   if (template === 'lottie_motion') {
-    graphicPayload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    graphicPayload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && (window.LOTTIE_PRESETS.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS.velocity_crimson?.data));
     graphicPayload.lottieConfig = {
       ...lottieConfig,
       mappings: lottieLayerMappings
@@ -1106,7 +1106,7 @@ document.getElementById('btn-manual-push')?.addEventListener('click', async () =
   };
 
   if (template === 'lottie_motion') {
-    payload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    payload.lottieData = currentLottieData || (window.LOTTIE_PRESETS && (window.LOTTIE_PRESETS.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS.velocity_crimson?.data));
     payload.lottieConfig = {
       ...lottieConfig,
       mappings: lottieLayerMappings
@@ -1190,7 +1190,7 @@ function renderConfidencePreview(payload) {
 
   // Lottie Motion Graphic Preview
   if (template === 'lottie_motion') {
-    const animData = payload.lottieData || currentLottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+    const animData = payload.lottieData || currentLottieData || (window.LOTTIE_PRESETS && (window.LOTTIE_PRESETS.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS.velocity_crimson?.data));
     const isFullFrame = animData && (animData.w >= 1280 || animData.h >= 720);
 
     if (isFullFrame) {
@@ -2729,7 +2729,9 @@ loadPresetData('soccer');
 updateElementPositionDropdown();
 
 // Pre-load default Lottie motion preset
-if (typeof window !== 'undefined' && window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson) {
+if (typeof window !== 'undefined' && window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.sports_lower_third_with_photo) {
+  loadLottieJson(window.LOTTIE_PRESETS.sports_lower_third_with_photo.data, 'sports_lower_third_with_photo.json');
+} else if (typeof window !== 'undefined' && window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson) {
   loadLottieJson(window.LOTTIE_PRESETS.velocity_crimson.data, 'velocity_crimson.json');
 }
 

@@ -12,3 +12,6 @@ npm-debug.log*
 # Scratch and test files
 scratch/
 test_*.js
+
+# After Effects
+*Auto-Save*/

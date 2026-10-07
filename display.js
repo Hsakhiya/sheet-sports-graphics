@@ -891,7 +891,7 @@ function showGraphic(payload) {
     lottieConfig
   } = payload;
 
-  const animData = lottieData || (window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.velocity_crimson?.data);
+  const animData = lottieData || (window.LOTTIE_PRESETS && (window.LOTTIE_PRESETS.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS.velocity_crimson?.data));
   const isFullFrameLottie = (template === 'lottie_motion') && animData && (animData.w >= 1280 || animData.h >= 720);
 
   if (isFullFrameLottie) {

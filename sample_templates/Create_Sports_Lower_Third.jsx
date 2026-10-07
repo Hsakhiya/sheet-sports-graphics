@@ -95,7 +95,54 @@
     numLayer.property("Opacity").setValueAtTime(0.4, 100);
 
     // -------------------------------------------------------------
-    // 4. Create Animated Jersey Badge (Shape Layer)
+    // 4. Create Logo / Athlete Photo Layer (Footage or Placeholder)
+    // -------------------------------------------------------------
+    var photoLayer = null;
+    var logoFile = File.openDialog(
+      "Select Team Logo or Athlete Photo PNG (or click Cancel for solid placeholder)",
+      "Images:*.png;*.jpg;*.jpeg;*.gif;*.tif"
+    );
+
+    if (logoFile && logoFile.exists) {
+      try {
+        var importOpt = new ImportOptions(logoFile);
+        var footageItem = proj.importFile(importOpt);
+        photoLayer = comp.layers.add(footageItem);
+        photoLayer.name = "Photo";
+
+        var maxDim = Math.max(footageItem.width, footageItem.height);
+        var targetSize = 72; // Fit comfortably inside 88x88 badge
+        var scaleRatio = (targetSize / maxDim) * 100;
+        photoLayer.property("Scale").setValue([scaleRatio, scaleRatio, 100]);
+      } catch (importErr) {
+        photoLayer = null;
+      }
+    }
+
+    if (!photoLayer) {
+      // Create clean solid placeholder named "Photo" if no file selected
+      photoLayer = comp.layers.addSolid([0.18, 0.24, 0.35], "Photo_Solid", 72, 72, 1.0);
+      photoLayer.name = "Photo";
+    }
+
+    photoLayer.property("Position").setValue([originX + 54, originY + 84, 0]);
+
+    // Animate Photo Layer Entrance (Bounce scale + fade)
+    var photoScaleProp = photoLayer.property("Scale");
+    var baseScale = photoScaleProp.value;
+    photoScaleProp.setValueAtTime(0.05, [0, 0, 100]);
+    photoScaleProp.setValueAtTime(0.35, [baseScale[0] * 1.15, baseScale[1] * 1.15, 100]);
+    photoScaleProp.setValueAtTime(0.5, [baseScale[0], baseScale[1], 100]);
+
+    var photoOpProp = photoLayer.property("Opacity");
+    photoOpProp.setValueAtTime(0.05, 0);
+    photoOpProp.setValueAtTime(0.25, 100);
+
+    // Move photo behind number layer
+    photoLayer.moveAfter(numLayer);
+
+    // -------------------------------------------------------------
+    // 5. Create Animated Jersey Badge (Shape Layer)
     // -------------------------------------------------------------
     var badgeLayer = comp.layers.addShape();
     badgeLayer.name = "Jersey_Badge_BG";
@@ -120,8 +167,8 @@
     badgeScale.setValueAtTime(0.35, [112, 112, 100]);
     badgeScale.setValueAtTime(0.5, [100, 100, 100]);
 
-    // Move badge behind the Number text layer
-    badgeLayer.moveAfter(numLayer);
+    // Move badge behind the Photo layer
+    badgeLayer.moveAfter(photoLayer);
 
     // -------------------------------------------------------------
     // 5. Create Animated Accent Stripe (Shape Layer)
@@ -192,13 +239,17 @@
       "SUCCESS! Sports Lower-Third Composition Created.\n\n" +
       "Saved to: sample_templates/Sports_Lower_Third.aep\n\n" +
       "Layers Configured for Lottie Export:\n" +
+      " • 'Photo' (Logo / Athlete Photo Layer)\n" +
       " • 'Name' (Athlete Name)\n" +
-      " • 'Team' (Subtitle)\n" +
+      " • 'Team' (Subtitle / Club)\n" +
       " • 'Number' (Jersey #)\n" +
       " • 'Category' (Header Tag)\n" +
       " • 'Stat 1' & 'Stat 2'\n\n" +
-      "To Export as Lottie:\n" +
-      "Open Window > Extensions > Bodymovin > Select this comp > Render!"
+      "To Export as Lottie with Bodymovin:\n" +
+      "1. Open Window > Extensions > Bodymovin\n" +
+      "2. Select this comp\n" +
+      "3. In Settings (gear icon) > Assets: check 'Include in json'\n" +
+      "4. Click Render!"
     );
 
   } catch (err) {
