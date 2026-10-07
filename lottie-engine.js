@@ -254,13 +254,20 @@
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
 
+    // Check if incoming text data contains Indic / Gujarati or non-ASCII characters
+    const allIncomingText = `${rowData.name || ''} ${rowData.subtitle || ''} ${rowData.category || ''}`;
+    const hasIndicOrSpecialChars = /[\u0900-\u0D7F]/.test(allIncomingText);
+
     // If template has baked glyphs that are missing most of the alphabet (< 60 chars),
-    // remove the restricted glyph table so lottie-web renders native SVG text without skipping lowercase letters!
-    if (Array.isArray(cloned.chars) && cloned.chars.length < 60) {
+    // OR if text contains Indic / Gujarati characters (which cannot use pre-baked Latin glyphs),
+    // remove the restricted glyph table so lottie-web renders native SVG text using the browser HarfBuzz shaper!
+    if (hasIndicOrSpecialChars || (Array.isArray(cloned.chars) && cloned.chars.length < 60)) {
       delete cloned.chars;
       if (cloned.fonts && Array.isArray(cloned.fonts.list)) {
         cloned.fonts.list.forEach(f => {
-          f.fFamily = f.fFamily ? `${f.fFamily}, Montserrat, Arial, sans-serif` : 'Montserrat, Arial, sans-serif';
+          f.fFamily = f.fFamily
+            ? `${f.fFamily}, 'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', Montserrat, Arial, sans-serif`
+            : "'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', Montserrat, Arial, sans-serif";
         });
       }
     }

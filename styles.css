@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700;1,800&family=Inter:wght@400;500;600;700;800&family=Teko:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anek+Gujarati:wght@500;600;700;800&family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700;1,800&family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Gujarati:wght@400;600;700;900&family=Teko:wght@500;600;700&display=swap');
 
 :root {
   --primary: #e10600;
@@ -57,11 +57,11 @@
 
 /* Custom Sports Font Classes */
 .font-sports {
-  font-family: 'Chakra Petch', sans-serif;
+  font-family: 'Chakra Petch', 'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', sans-serif;
 }
 
 .font-num {
-  font-family: 'Teko', sans-serif;
+  font-family: 'Teko', 'Anek Gujarati', 'Noto Sans Gujarati', sans-serif;
   letter-spacing: 0.05em;
 }
 
