@@ -219,12 +219,18 @@ function buildGraphicHTML(template, data) {
     case 'player_card':
     default:
       // Standard Sports Player Profile / Stat Card
+      const pScale = (currentGraphicPayload?.lottieConfig?.photoScale) ?? (currentGraphicPayload?.elementOffsets?.['__dynamic_photo__']?.scale ?? 1.0);
+      const pFit = currentGraphicPayload?.lottieConfig?.photoFit || 'contain';
+      const pOff = currentGraphicPayload?.elementOffsets?.['__dynamic_photo__'] || (currentGraphicPayload?.lottieConfig?.photoOffsets) || { x: 0, y: 0 };
+      const cardFitClass = pFit === 'cover' ? 'object-cover object-top' : 'object-contain p-2';
+      const cardTransform = `transform: translate(${pOff.x || 0}px, ${pOff.y || 0}px) scale(${pScale}); transform-origin: center center; transition: transform 0.1s ease-out;`;
+
       return `
         <div class="flex items-end shadow-2xl select-none">
           <!-- Left: Player Photo / Avatar Card -->
-          <div class="relative w-36 h-40 bg-slate-900 border-2 border-primary rounded-2xl overflow-hidden shadow-2xl anim-badge-enter flex-shrink-0 z-20 -mr-4 mb-1">
+          <div class="relative w-36 h-40 bg-slate-900 border-2 border-primary rounded-2xl overflow-hidden shadow-2xl anim-badge-enter flex-shrink-0 z-20 -mr-4 mb-1 flex items-center justify-center">
             ${photo ? `
-              <img src="${photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top rounded-2xl" onerror="this.onerror=null; this.outerHTML=getFallbackAvatar('${(name || '').replace(/'/g, "\\'")}', '${(number || '').replace(/'/g, "\\'")}')">
+              <img src="${photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full ${cardFitClass} rounded-2xl" style="${cardTransform}" onerror="this.onerror=null; this.outerHTML=getFallbackAvatar('${(name || '').replace(/'/g, "\\'")}', '${(number || '').replace(/'/g, "\\'")}')">
             ` : getFallbackAvatar(name, number)}
 
             ${number && photo ? `
@@ -1067,13 +1073,32 @@ function handleGraphicAction(action, payload = {}, msgId = null, timestamp = nul
         applyGlobalGraphicOffset(payload.elementOffsets);
         if (currentGraphicPayload) {
           currentGraphicPayload.elementOffsets = payload.elementOffsets;
-          if (currentGraphicPayload.template === 'custom_svg' && currentGraphicPayload.svgMarkup && !wrapper.classList.contains('hidden')) {
-            wrapper.innerHTML = renderCustomSvgHTML(
-              currentGraphicPayload.svgMarkup,
-              currentGraphicPayload.layerValues || {},
-              currentGraphicPayload.accentColor,
-              payload.elementOffsets
-            );
+          if (payload.lottieConfig) {
+            currentGraphicPayload.lottieConfig = { ...currentGraphicPayload.lottieConfig, ...payload.lottieConfig };
+          }
+          if (!wrapper.classList.contains('hidden')) {
+            if (currentGraphicPayload.template === 'custom_svg' && currentGraphicPayload.svgMarkup) {
+              wrapper.innerHTML = renderCustomSvgHTML(
+                currentGraphicPayload.svgMarkup,
+                currentGraphicPayload.layerValues || {},
+                currentGraphicPayload.accentColor,
+                payload.elementOffsets
+              );
+            } else if (currentGraphicPayload.template === 'lottie_motion' && window.LottieEngine) {
+              const currentAnim = currentGraphicPayload.lottieData || (window.LOTTIE_PRESETS && (window.LOTTIE_PRESETS.sports_lower_third_with_photo?.data || window.LOTTIE_PRESETS.velocity_crimson?.data));
+              if (currentAnim) {
+                window.LottieEngine.renderLottieGraphic(
+                  wrapper,
+                  currentAnim,
+                  currentGraphicPayload.data || {},
+                  currentGraphicPayload.accentColor,
+                  currentGraphicPayload.lottieConfig || {},
+                  false
+                );
+              }
+            } else if (currentGraphicPayload.template === 'player_card') {
+              wrapper.innerHTML = buildGraphicHTML(currentGraphicPayload.template, currentGraphicPayload.data || {});
+            }
           }
         }
       }

@@ -505,6 +505,46 @@
           </div>
         </div>
 
+        <!-- Dynamic Photo / Logo Sizing & Framing Controls -->
+        <div id="lottie-photo-controls" class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Dynamic Image Size & Framing</span>
+            </span>
+            <span id="lottie-photo-scale-badge" class="text-[10px] font-mono text-cyan-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">100%</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <!-- Framing Mode -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Framing / Fit</label>
+              <select id="lottie-photo-fit-select" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-amber-400 outline-none">
+                <option value="contain" selected>🔍 Fit / Contain (Full Logo, No Crop)</option>
+                <option value="cover">📐 Fill / Cover (Fill Badge Frame)</option>
+              </select>
+              <p class="text-[10px] text-slate-500 mt-1">Use 'Fit' for logos like PNG crests, 'Fill' for portraits</p>
+            </div>
+
+            <!-- Scale Slider & Quick Buttons -->
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider">Scale (50% - 200%)</label>
+                <div class="flex items-center gap-1">
+                  <input type="number" id="lottie-photo-scale-input" min="50" max="200" step="5" value="100" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-amber-400 outline-none">
+                  <span class="text-[11px] text-slate-500">%</span>
+                </div>
+              </div>
+              <input type="range" id="lottie-photo-scale-slider" min="50" max="200" step="1" value="100" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-1.5">
+              <div class="flex items-center gap-1">
+                <button id="btn-photo-scale-down" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale down 10%">-10%</button>
+                <button id="btn-photo-scale-reset" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-amber-400/20 border border-slate-800 text-[10px] font-mono text-amber-400 font-bold transition active:scale-95" title="Reset to 100%">100%</button>
+                <button id="btn-photo-scale-up" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale up 10%">+10%</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Dynamic Lottie Layer Mapping Container (revealed when text layers are detected) -->
         <div id="lottie-mapping-section" class="hidden">
           <div class="flex items-center justify-between mb-1.5">

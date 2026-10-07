@@ -182,7 +182,7 @@
   // 3. Inject Dynamic Image into Targeted Image Asset(s)
   // Preserves ALL static image assets (sponsors, watermarks, etc.) completely intact!
   // -----------------------------------------------------------
-  function injectImageAssets(cloned, rowData = {}, mappings = {}) {
+  function injectImageAssets(cloned, rowData = {}, mappings = {}, photoScale = 1.0, photoFit = 'contain', photoOffsets = { x: 0, y: 0 }) {
     if (!cloned || !Array.isArray(cloned.assets)) return;
 
     const imageLayers = extractLottieImageLayers(cloned);
@@ -244,6 +244,74 @@
         }
         // Any other asset is completely skipped and stays 100% static!
       });
+
+      // 4. Adjust Scale and Position transforms on the targeted dynamic image layers!
+      // Static image layers (sponsors, leagues, watermarks) are NEVER modified.
+      const numScale = parseFloat(photoScale);
+      const isScaleAdjusted = !isNaN(numScale) && numScale > 0 && Math.abs(numScale - 1.0) > 0.001;
+      const offX = parseFloat((photoOffsets && photoOffsets.x) || 0);
+      const offY = parseFloat((photoOffsets && photoOffsets.y) || 0);
+      const isOffsetAdjusted = offX !== 0 || offY !== 0;
+
+      if (isScaleAdjusted || isOffsetAdjusted) {
+        function scaleAndOffsetDynamicLayer(layer) {
+          if (!layer.ks) return;
+
+          // Scale adjustments
+          if (isScaleAdjusted && layer.ks.s) {
+            if ((layer.ks.s.a === 0 || layer.ks.s.a === undefined) && Array.isArray(layer.ks.s.k)) {
+              layer.ks.s.k[0] = parseFloat((layer.ks.s.k[0] * numScale).toFixed(2));
+              layer.ks.s.k[1] = parseFloat((layer.ks.s.k[1] * numScale).toFixed(2));
+            } else if (layer.ks.s.a === 1 && Array.isArray(layer.ks.s.k)) {
+              layer.ks.s.k.forEach(kf => {
+                if (Array.isArray(kf.s)) {
+                  kf.s[0] = parseFloat((kf.s[0] * numScale).toFixed(2));
+                  kf.s[1] = parseFloat((kf.s[1] * numScale).toFixed(2));
+                }
+                if (Array.isArray(kf.e)) {
+                  kf.e[0] = parseFloat((kf.e[0] * numScale).toFixed(2));
+                  kf.e[1] = parseFloat((kf.e[1] * numScale).toFixed(2));
+                }
+              });
+            }
+          }
+
+          // Position offset adjustments (X, Y)
+          if (isOffsetAdjusted && layer.ks.p) {
+            if ((layer.ks.p.a === 0 || layer.ks.p.a === undefined) && Array.isArray(layer.ks.p.k)) {
+              layer.ks.p.k[0] = parseFloat((layer.ks.p.k[0] + offX).toFixed(2));
+              layer.ks.p.k[1] = parseFloat((layer.ks.p.k[1] + offY).toFixed(2));
+            } else if (layer.ks.p.a === 1 && Array.isArray(layer.ks.p.k)) {
+              layer.ks.p.k.forEach(kf => {
+                if (Array.isArray(kf.s)) {
+                  kf.s[0] = parseFloat((kf.s[0] + offX).toFixed(2));
+                  kf.s[1] = parseFloat((kf.s[1] + offY).toFixed(2));
+                }
+                if (Array.isArray(kf.e)) {
+                  kf.e[0] = parseFloat((kf.e[0] + offX).toFixed(2));
+                  kf.e[1] = parseFloat((kf.e[1] + offY).toFixed(2));
+                }
+              });
+            }
+          }
+        }
+
+        function walkLayersForDynamicImages(layers) {
+          if (!Array.isArray(layers)) return;
+          layers.forEach(layer => {
+            if (layer.ty === 2 && layer.refId && assetReplacements.has(layer.refId)) {
+              scaleAndOffsetDynamicLayer(layer);
+            }
+          });
+        }
+
+        walkLayersForDynamicImages(cloned.layers);
+        if (Array.isArray(cloned.assets)) {
+          cloned.assets.forEach(asset => {
+            if (Array.isArray(asset.layers)) walkLayersForDynamicImages(asset.layers);
+          });
+        }
+      }
     }
   }
 
@@ -373,7 +441,7 @@
   // -----------------------------------------------------------
   // 6. Inject Dynamic Sheet Data into Lottie JSON Layers
   // -----------------------------------------------------------
-  function injectDataIntoLottieJson(lottieJson, rowData = {}, mappings = {}) {
+  function injectDataIntoLottieJson(lottieJson, rowData = {}, mappings = {}, photoScale = 1.0, photoFit = 'contain', photoOffsets = { x: 0, y: 0 }) {
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
 
@@ -444,7 +512,7 @@
     }
 
     // Dynamic Photo / Image Asset Replacement from Sheet / Roster (Supports Multiple Images: Dynamic vs Static)
-    injectImageAssets(cloned, rowData, mappings);
+    injectImageAssets(cloned, rowData, mappings, photoScale, photoFit, photoOffsets);
 
     // Dynamic Accent Color Injection into Shape / Stripe Layers
     injectAccentColor(cloned, rowData.accentColor || mappings._accentColor, mappings);
@@ -455,7 +523,7 @@
   // -----------------------------------------------------------
   // Helper: Blank out internal Lottie text layers for Overlay Mode
   // -----------------------------------------------------------
-  function blankOutLottieTextLayers(lottieJson, rowData = {}, mappings = {}) {
+  function blankOutLottieTextLayers(lottieJson, rowData = {}, mappings = {}, photoScale = 1.0, photoFit = 'contain', photoOffsets = { x: 0, y: 0 }) {
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
     function clearText(layers) {
@@ -480,7 +548,7 @@
     }
 
     // Also inject dynamic image into Lottie if rowData is provided (preserves static images)
-    injectImageAssets(cloned, rowData, mappings);
+    injectImageAssets(cloned, rowData, mappings, photoScale, photoFit, photoOffsets);
 
     // Also inject dynamic accent color
     injectAccentColor(cloned, rowData.accentColor || mappings._accentColor, mappings);
@@ -491,7 +559,7 @@
   // -----------------------------------------------------------
   // 3. Render High-Impact Broadcast Typography Overlay
   // -----------------------------------------------------------
-  function buildBroadcastOverlayHTML(data = {}, accentColor = '#e10600', isPreview = false) {
+  function buildBroadcastOverlayHTML(data = {}, accentColor = '#e10600', isPreview = false, options = {}) {
     const name = data.name || 'ATHLETE NAME';
     const subtitle = data.subtitle || 'TEAM / CLUB';
     const number = data.number ? String(data.number) : '';
@@ -499,8 +567,17 @@
     const photo = normalizeImageUrl(data.photo);
     const stats = Array.isArray(data.stats) ? data.stats : [];
 
+    const photoScale = (options && options.photoScale !== undefined) ? options.photoScale : 1.0;
+    const photoFit = (options && options.photoFit) ? options.photoFit : 'contain';
+    const photoOffsets = (options && options.photoOffsets) ? options.photoOffsets : { x: 0, y: 0 };
+    const offX = parseFloat(photoOffsets.x || 0);
+    const offY = parseFloat(photoOffsets.y || 0);
+
+    const fitClass = photoFit === 'cover' ? 'object-cover' : 'object-contain p-1.5';
+    const transformStyle = `transform: translate(${offX}px, ${offY}px) scale(${photoScale}); transform-origin: center center; transition: transform 0.1s ease-out;`;
+
     const avatarHtml = photo
-      ? `<img src="${photo}" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white font-sports font-black text-2xl"><span class="drop-shadow-md">${number || (name || 'SP').slice(0, 2).toUpperCase()}</span></div>`
+      ? `<img src="${photo}" alt="" class="w-full h-full ${fitClass}" style="${transformStyle}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="w-full h-full hidden items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 text-white font-sports font-black text-2xl"><span class="drop-shadow-md">${number || (name || 'SP').slice(0, 2).toUpperCase()}</span></div>`
       : getFallbackAvatar(name, number);
 
     const statsHtml = stats.length > 0 ? `
@@ -518,7 +595,7 @@
       <div class="relative z-10 w-full h-full flex items-center justify-between px-6 py-3 select-none pointer-events-none">
         <!-- Left: Athlete Photo / Jersey Badge -->
         <div class="flex items-center gap-4 min-w-0 flex-1">
-          <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-white/20 shadow-2xl bg-slate-900">
+          <div class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 border-2 border-white/20 shadow-2xl bg-slate-900 flex items-center justify-center">
             ${avatarHtml}
             ${number ? `
               <span class="absolute bottom-0 right-0 px-1.5 py-0.5 bg-red-600/95 text-white font-sports font-black text-xs rounded-tl border-t border-l border-red-400 shadow">
@@ -598,16 +675,20 @@
     root.appendChild(canvasMount);
 
     const mode = config.overlayMode || 'overlay';
+    const photoScale = parseFloat(config.photoScale !== undefined ? config.photoScale : 1.0);
+    const photoFit = config.photoFit || 'contain';
+    const photoOffsets = config.photoOffsets || { x: 0, y: 0 };
+    const mappings = config.mappings || {};
     let animationDataToUse = lottieData;
 
     if (mode === 'in_animation') {
-      animationDataToUse = injectDataIntoLottieJson(lottieData, { ...rowData, accentColor }, config.mappings || {});
+      animationDataToUse = injectDataIntoLottieJson(lottieData, { ...rowData, accentColor }, mappings, photoScale, photoFit, photoOffsets);
     } else {
       // Overlay mode: blank out internal text layers in Lottie so they don't clash or render initials behind the overlay
-      animationDataToUse = blankOutLottieTextLayers(lottieData, { ...rowData, accentColor }, config.mappings || {});
+      animationDataToUse = blankOutLottieTextLayers(lottieData, { ...rowData, accentColor }, mappings, photoScale, photoFit, photoOffsets);
       const overlayEl = document.createElement('div');
       overlayEl.className = 'lottie-typography-layer relative z-10 w-full h-full';
-      overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview);
+      overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview, { photoScale, photoFit, photoOffsets });
       root.appendChild(overlayEl);
     }
 

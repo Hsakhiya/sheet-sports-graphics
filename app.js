@@ -119,8 +119,21 @@ let lottieConfig = {
   overlayMode: 'overlay',
   loop: true,
   speed: 1.0,
+  photoScale: 1.0,
+  photoFit: 'contain',
+  photoOffsets: { x: 0, y: 0 },
   mappings: {}
 };
+
+// Dynamic Image Sizing & Framing DOM Elements
+const lottiePhotoControls = document.getElementById('lottie-photo-controls');
+const lottiePhotoScaleSlider = document.getElementById('lottie-photo-scale-slider');
+const lottiePhotoScaleInput = document.getElementById('lottie-photo-scale-input');
+const lottiePhotoScaleBadge = document.getElementById('lottie-photo-scale-badge');
+const lottiePhotoFitSelect = document.getElementById('lottie-photo-fit-select');
+const btnPhotoScaleDown = document.getElementById('btn-photo-scale-down');
+const btnPhotoScaleReset = document.getElementById('btn-photo-scale-reset');
+const btnPhotoScaleUp = document.getElementById('btn-photo-scale-up');
 
 // Element Position & Alignment (X, Y) Inspector Elements & State
 const elementPositionCard = document.getElementById('element-position-card');
@@ -136,11 +149,24 @@ const posScaleInput = document.getElementById('pos-scale-input');
 const btnScaleReset100 = document.getElementById('btn-scale-reset-100');
 const highlightElementToggle = document.getElementById('highlight-element-toggle');
 
-// Custom element offsets state: { [elementId]: { x: number, y: number } }
+// Custom element offsets state: { [elementId]: { x: number, y: number, scale: number } }
 let elementOffsets = {};
 try {
   const saved = localStorage.getItem('sports_graphic_element_offsets');
-  if (saved) elementOffsets = JSON.parse(saved);
+  if (saved) {
+    elementOffsets = JSON.parse(saved);
+    if (elementOffsets['__dynamic_photo__']) {
+      lottieConfig.photoScale = elementOffsets['__dynamic_photo__'].scale !== undefined ? elementOffsets['__dynamic_photo__'].scale : 1.0;
+      lottieConfig.photoOffsets = {
+        x: elementOffsets['__dynamic_photo__'].x || 0,
+        y: elementOffsets['__dynamic_photo__'].y || 0
+      };
+    }
+  }
+  const savedFit = localStorage.getItem('sports_graphic_photo_fit');
+  if (savedFit) {
+    lottieConfig.photoFit = savedFit;
+  }
 } catch (e) {}
 
 // -------------------------------------------------------------
@@ -1213,7 +1239,11 @@ function renderConfidencePreview(payload) {
 
     // Only re-mount Bodymovin if the content/data actually changed or container is empty
     const hasExistingLottie = previewRenderArea.querySelector('.lottie-graphic-root');
-    const dataKey = `${payload.data?.name || ''}::${payload.data?.subtitle || ''}::${accentColor || ''}::${(payload.lottieConfig || lottieConfig)?.overlayMode || ''}::${animData?.nm || ''}`;
+    const effectiveCfg = payload.lottieConfig || lottieConfig || {};
+    const cfgScale = effectiveCfg.photoScale ?? 1.0;
+    const cfgFit = effectiveCfg.photoFit ?? 'contain';
+    const cfgOff = effectiveCfg.photoOffsets ? `${effectiveCfg.photoOffsets.x}_${effectiveCfg.photoOffsets.y}` : '0_0';
+    const dataKey = `${payload.data?.name || ''}::${payload.data?.subtitle || ''}::${payload.data?.photo || ''}::${accentColor || ''}::${effectiveCfg.overlayMode || ''}::${cfgScale}::${cfgFit}::${cfgOff}::${animData?.nm || ''}`;
     if (!hasExistingLottie || previewRenderArea._lastLottieKey !== dataKey) {
       previewRenderArea._lastLottieKey = dataKey;
       previewRenderArea.innerHTML = '';
@@ -1312,12 +1342,18 @@ function renderConfidencePreview(payload) {
   const safeNum = (number || '').replace(/'/g, "\\'");
   const fallbackAvatarHtml = window.getPreviewFallbackAvatar(name, number);
 
+  const cardScale = payload.lottieConfig?.photoScale ?? (elementOffsets?.['__dynamic_photo__']?.scale ?? (lottieConfig.photoScale || 1.0));
+  const cardFit = payload.lottieConfig?.photoFit || lottieConfig.photoFit || 'contain';
+  const cardOff = elementOffsets?.['__dynamic_photo__'] || lottieConfig.photoOffsets || { x: 0, y: 0 };
+  const cardFitClass = cardFit === 'cover' ? 'object-cover object-top' : 'object-contain p-1.5';
+  const cardTransform = `transform: translate(${cardOff.x || 0}px, ${cardOff.y || 0}px) scale(${cardScale}); transform-origin: center center; transition: transform 0.1s ease-out;`;
+
   previewRenderArea.innerHTML = `
     <div class="flex items-end select-none">
       <!-- Player Photo / Avatar Card (Adapts to rounded-xl container) -->
-      <div class="relative w-16 h-20 bg-slate-900 border-2 rounded-xl overflow-hidden shadow-xl flex-shrink-0 z-20 -mr-2 mb-0.5" style="border-color: var(--primary);">
+      <div class="relative w-16 h-20 bg-slate-900 border-2 rounded-xl overflow-hidden shadow-xl flex-shrink-0 z-20 -mr-2 mb-0.5 flex items-center justify-center" style="border-color: var(--primary);">
         ${data.photo ? `
-          <img src="${data.photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full object-cover object-top rounded-xl" onerror="this.onerror=null; this.outerHTML=window.getPreviewFallbackAvatar('${safeName}', '${safeNum}')">
+          <img src="${data.photo}" alt="${name}" referrerpolicy="no-referrer" class="w-full h-full ${cardFitClass} rounded-xl" style="${cardTransform}" onerror="this.onerror=null; this.outerHTML=window.getPreviewFallbackAvatar('${safeName}', '${safeNum}')">
         ` : fallbackAvatarHtml}
       </div>
 
@@ -2540,6 +2576,75 @@ btnDownloadLottie?.addEventListener('click', () => {
 });
 
 // -------------------------------------------------------------
+// Dynamic Image Sizing & Framing Controller
+// -------------------------------------------------------------
+function updateLottiePhotoScale(newScale, isDelta = false) {
+  let scaleVal = isDelta ? ((lottieConfig.photoScale || 1.0) + newScale) : newScale;
+  scaleVal = Math.max(0.50, Math.min(2.00, parseFloat(scaleVal.toFixed(2))));
+  lottieConfig.photoScale = scaleVal;
+
+  const percent = Math.round(scaleVal * 100);
+  if (lottiePhotoScaleSlider) lottiePhotoScaleSlider.value = percent;
+  if (lottiePhotoScaleInput) lottiePhotoScaleInput.value = percent;
+  if (lottiePhotoScaleBadge) lottiePhotoScaleBadge.textContent = `${percent}%`;
+
+  // Sync to elementOffsets['__dynamic_photo__']
+  if (!elementOffsets['__dynamic_photo__']) {
+    elementOffsets['__dynamic_photo__'] = { x: 0, y: 0, scale: 1.0 };
+  }
+  elementOffsets['__dynamic_photo__'].scale = scaleVal;
+
+  // If Alignment Inspector currently has __dynamic_photo__ selected, sync its sliders too
+  if (posElementSelect && posElementSelect.value === '__dynamic_photo__') {
+    if (posScaleSlider) posScaleSlider.value = percent;
+    if (posScaleInput) posScaleInput.value = percent;
+  }
+
+  try {
+    localStorage.setItem('sports_graphic_element_offsets', JSON.stringify(elementOffsets));
+  } catch (e) {}
+
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
+  refreshCurrentPreview();
+}
+
+function updateLottiePhotoFit(fit) {
+  lottieConfig.photoFit = fit;
+  if (lottiePhotoFitSelect) lottiePhotoFitSelect.value = fit;
+  try {
+    localStorage.setItem('sports_graphic_photo_fit', fit);
+  } catch (e) {}
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
+  refreshCurrentPreview();
+}
+
+lottiePhotoScaleSlider?.addEventListener('input', (e) => {
+  const percent = parseFloat(e.target.value) || 100;
+  updateLottiePhotoScale(percent / 100, false);
+});
+
+lottiePhotoScaleInput?.addEventListener('change', (e) => {
+  const percent = parseFloat(e.target.value) || 100;
+  updateLottiePhotoScale(percent / 100, false);
+});
+
+lottiePhotoFitSelect?.addEventListener('change', (e) => {
+  updateLottiePhotoFit(e.target.value);
+});
+
+btnPhotoScaleDown?.addEventListener('click', () => {
+  updateLottiePhotoScale(-0.10, true);
+});
+
+btnPhotoScaleReset?.addEventListener('click', () => {
+  updateLottiePhotoScale(1.0, false);
+});
+
+btnPhotoScaleUp?.addEventListener('click', () => {
+  updateLottiePhotoScale(0.10, true);
+});
+
+// -------------------------------------------------------------
 // Element Position & Alignment (X, Y) Inspector Controller
 // -------------------------------------------------------------
 function updateElementPositionDropdown() {
@@ -2553,7 +2658,13 @@ function updateElementPositionDropdown() {
   globalOpt.textContent = '🎯 Entire Lower Third (All Elements)';
   posElementSelect.appendChild(globalOpt);
 
-  // 2. Add individual SVG vector layers if available
+  // 2. Always provide Dynamic Photo / Logo as Option 2
+  const photoOpt = document.createElement('option');
+  photoOpt.value = '__dynamic_photo__';
+  photoOpt.textContent = '🖼️ Dynamic Photo / Logo (Scale & Framing)';
+  posElementSelect.appendChild(photoOpt);
+
+  // 3. Add individual SVG vector layers if available
   if (svgLayerElements.length > 0) {
     const groupOpt = document.createElement('optgroup');
     groupOpt.label = 'Vector SVG Layers';
@@ -2570,7 +2681,7 @@ function updateElementPositionDropdown() {
   }
 
   // Restore previous selection if still exists
-  const exists = (prevSelected === '__entire_graphic__') || svgLayerElements.some(el => el.id === prevSelected);
+  const exists = (prevSelected === '__entire_graphic__') || (prevSelected === '__dynamic_photo__') || svgLayerElements.some(el => el.id === prevSelected);
   if (exists) {
     posElementSelect.value = prevSelected;
   } else {
@@ -2582,7 +2693,16 @@ function updateElementPositionDropdown() {
 
 function syncControlsToSelectedElement() {
   const selectedId = posElementSelect ? posElementSelect.value : '';
-  const offset = (selectedId && elementOffsets[selectedId]) || { x: 0, y: 0, scale: 1.0 };
+  let offset = (selectedId && elementOffsets[selectedId]);
+  if (!offset && selectedId === '__dynamic_photo__') {
+    offset = {
+      x: lottieConfig.photoOffsets?.x || 0,
+      y: lottieConfig.photoOffsets?.y || 0,
+      scale: lottieConfig.photoScale || 1.0
+    };
+  } else if (!offset) {
+    offset = { x: 0, y: 0, scale: 1.0 };
+  }
 
   const x = Math.round(offset.x || 0);
   const y = Math.round(offset.y || 0);
@@ -2627,7 +2747,15 @@ function updateSelectedElementOffset(x, y, isDelta = false) {
   elementOffsets[selectedId].x = Math.max(-maxLimitX, Math.min(maxLimitX, elementOffsets[selectedId].x));
   elementOffsets[selectedId].y = Math.max(-maxLimitY, Math.min(maxLimitY, elementOffsets[selectedId].y));
 
-  // If offset is 0,0 and scale is 1.0, remove it to keep state clean
+  // Sync to lottieConfig if dynamic photo
+  if (selectedId === '__dynamic_photo__') {
+    lottieConfig.photoOffsets = {
+      x: elementOffsets[selectedId].x,
+      y: elementOffsets[selectedId].y
+    };
+  }
+
+  // If offset is 0,0 and scale is 1.0, remove it to keep state clean (unless it's photo with non-default state)
   const isDefault = elementOffsets[selectedId].x === 0 &&
                     elementOffsets[selectedId].y === 0 &&
                     (elementOffsets[selectedId].scale === undefined || elementOffsets[selectedId].scale === 1.0);
@@ -2640,7 +2768,7 @@ function updateSelectedElementOffset(x, y, isDelta = false) {
   } catch (e) {}
 
   syncControlsToSelectedElement();
-  sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
   refreshCurrentPreview();
 }
 
@@ -2659,6 +2787,15 @@ function updateSelectedElementScale(scaleVal, isDelta = false) {
 
   elementOffsets[selectedId].scale = parseFloat((newPercent / 100).toFixed(2));
 
+  // Sync to lottieConfig and photo scale UI if dynamic photo
+  if (selectedId === '__dynamic_photo__') {
+    lottieConfig.photoScale = elementOffsets[selectedId].scale;
+    const pct = Math.round(lottieConfig.photoScale * 100);
+    if (lottiePhotoScaleSlider) lottiePhotoScaleSlider.value = pct;
+    if (lottiePhotoScaleInput) lottiePhotoScaleInput.value = pct;
+    if (lottiePhotoScaleBadge) lottiePhotoScaleBadge.textContent = `${pct}%`;
+  }
+
   // If offset is 0,0 and scale is 1.0, remove it to keep state clean
   const isDefault = (elementOffsets[selectedId].x || 0) === 0 &&
                     (elementOffsets[selectedId].y || 0) === 0 &&
@@ -2672,7 +2809,7 @@ function updateSelectedElementScale(scaleVal, isDelta = false) {
   } catch (e) {}
 
   syncControlsToSelectedElement();
-  sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
   refreshCurrentPreview();
 }
 
@@ -2807,22 +2944,34 @@ btnResetElementPos?.addEventListener('click', () => {
   const selectedId = posElementSelect ? posElementSelect.value : '';
   if (selectedId && elementOffsets[selectedId]) {
     delete elementOffsets[selectedId];
-    try {
-      localStorage.setItem('sports_graphic_element_offsets', JSON.stringify(elementOffsets));
-    } catch (e) {}
-    syncControlsToSelectedElement();
-    sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
-    refreshCurrentPreview();
   }
+  if (selectedId === '__dynamic_photo__') {
+    lottieConfig.photoOffsets = { x: 0, y: 0 };
+    lottieConfig.photoScale = 1.0;
+    if (lottiePhotoScaleSlider) lottiePhotoScaleSlider.value = 100;
+    if (lottiePhotoScaleInput) lottiePhotoScaleInput.value = 100;
+    if (lottiePhotoScaleBadge) lottiePhotoScaleBadge.textContent = '100%';
+  }
+  try {
+    localStorage.setItem('sports_graphic_element_offsets', JSON.stringify(elementOffsets));
+  } catch (e) {}
+  syncControlsToSelectedElement();
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
+  refreshCurrentPreview();
 });
 
 btnResetAllPositions?.addEventListener('click', () => {
   elementOffsets = {};
+  lottieConfig.photoOffsets = { x: 0, y: 0 };
+  lottieConfig.photoScale = 1.0;
+  if (lottiePhotoScaleSlider) lottiePhotoScaleSlider.value = 100;
+  if (lottiePhotoScaleInput) lottiePhotoScaleInput.value = 100;
+  if (lottiePhotoScaleBadge) lottiePhotoScaleBadge.textContent = '100%';
   try {
     localStorage.removeItem('sports_graphic_element_offsets');
   } catch (e) {}
   syncControlsToSelectedElement();
-  sendToDisplay('UPDATE_OFFSETS', { elementOffsets });
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
   refreshCurrentPreview();
 });
 
@@ -2851,6 +3000,13 @@ autoRefreshInterval.addEventListener('change', handleAutoRefresh);
 // -------------------------------------------------------------
 loadPresetData('soccer');
 updateElementPositionDropdown();
+
+// Initialize Dynamic Photo scale & fit controls
+const initPhotoScalePct = Math.round((lottieConfig.photoScale || 1.0) * 100);
+if (lottiePhotoScaleSlider) lottiePhotoScaleSlider.value = initPhotoScalePct;
+if (lottiePhotoScaleInput) lottiePhotoScaleInput.value = initPhotoScalePct;
+if (lottiePhotoScaleBadge) lottiePhotoScaleBadge.textContent = `${initPhotoScalePct}%`;
+if (lottiePhotoFitSelect) lottiePhotoFitSelect.value = lottieConfig.photoFit || 'contain';
 
 // Pre-load default Lottie motion preset
 if (typeof window !== 'undefined' && window.LOTTIE_PRESETS && window.LOTTIE_PRESETS.sports_lower_third_with_photo) {
