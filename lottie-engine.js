@@ -248,7 +248,130 @@
   }
 
   // -----------------------------------------------------------
-  // 4. Inject Dynamic Sheet Data into Lottie JSON Layers
+  // Helper: Convert Hex / RGB color to Bodymovin Float RGBA [0-1]
+  // -----------------------------------------------------------
+  function hexToLottieColor(hex) {
+    if (!hex || typeof hex !== 'string') return [0.88, 0.02, 0, 1];
+    let clean = hex.trim().replace(/^#/, '');
+    if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [0.88, 0.02, 0, 1];
+    const num = parseInt(clean, 16);
+    return [
+      parseFloat((((num >> 16) & 255) / 255).toFixed(3)),
+      parseFloat((((num >> 8) & 255) / 255).toFixed(3)),
+      parseFloat(((num & 255) / 255).toFixed(3)),
+      1
+    ];
+  }
+
+  // -----------------------------------------------------------
+  // 4. Extract Color & Accent Shape Layers from Lottie JSON
+  // -----------------------------------------------------------
+  function extractLottieColorLayers(lottieJson) {
+    if (!lottieJson || !Array.isArray(lottieJson.layers)) return [];
+    const found = [];
+
+    function inspect(layers) {
+      if (!Array.isArray(layers)) return;
+      layers.forEach(layer => {
+        if (layer.ty === 4 && Array.isArray(layer.shapes)) {
+          const nm = layer.nm || '';
+          const isAccentLikely = /accent|stripe|highlight|border|brand|theme|tint|line|glow/i.test(nm);
+          found.push({
+            id: layer.ind || nm,
+            name: nm,
+            isAccentLikely
+          });
+        }
+      });
+    }
+
+    inspect(lottieJson.layers);
+    if (Array.isArray(lottieJson.assets)) {
+      lottieJson.assets.forEach(asset => {
+        if (Array.isArray(asset.layers)) inspect(asset.layers);
+      });
+    }
+    return found;
+  }
+
+  // -----------------------------------------------------------
+  // 5. Dynamically Inject Accent Color into Vector Shape Layers
+  // -----------------------------------------------------------
+  function injectAccentColor(cloned, accentColor = '#e10600', mappings = {}) {
+    if (!cloned || !accentColor) return;
+    const lottieRgba = hexToLottieColor(accentColor);
+
+    function recolorShapeItems(items, targetProp = 'both') {
+      if (!Array.isArray(items)) return;
+      items.forEach(it => {
+        // If fill
+        if (it.ty === 'fl' && (targetProp === 'both' || targetProp === 'fill')) {
+          if (it.c && Array.isArray(it.c.k) && (it.c.a === 0 || it.c.a === undefined)) {
+            it.c.k = [...lottieRgba];
+          }
+        }
+        // If stroke
+        if (it.ty === 'st' && (targetProp === 'both' || targetProp === 'stroke')) {
+          if (it.c && Array.isArray(it.c.k) && (it.c.a === 0 || it.c.a === undefined)) {
+            it.c.k = [...lottieRgba];
+          }
+        }
+        if (Array.isArray(it.it)) {
+          recolorShapeItems(it.it, targetProp);
+        }
+      });
+    }
+
+    function processLayers(layers) {
+      if (!Array.isArray(layers)) return;
+      layers.forEach(layer => {
+        if (layer.ty === 4 && Array.isArray(layer.shapes)) {
+          const layerNm = layer.nm || '';
+          const mapped = mappings[layerNm] || mappings[layer.ind];
+
+          // 1. Explicit mapping in UI
+          if (mapped === 'accent' || mapped === 'primary') {
+            recolorShapeItems(layer.shapes, 'both');
+            return;
+          }
+          if (mapped === '__static__') {
+            return; // Explicitly kept unchanged
+          }
+
+          // 2. Auto-detection by layer name keywords
+          const isAccentName = /accent|stripe|highlight|brand|theme|tint/i.test(layerNm);
+          const isExcludedName = /backplate|main_bg|bg_dark|navy|shadow|canvas|base/i.test(layerNm);
+          if (isAccentName && !isExcludedName) {
+            recolorShapeItems(layer.shapes, 'both');
+          }
+
+          // Also check for nested stroke/fill named "Accent" inside any layer (e.g. badge border)
+          layer.shapes.forEach(grp => {
+            if (grp.it && Array.isArray(grp.it)) {
+              grp.it.forEach(subItem => {
+                if (/accent|stroke|border|highlight/i.test(subItem.nm || '') && (subItem.ty === 'st' || subItem.ty === 'fl')) {
+                  if (subItem.c && Array.isArray(subItem.c.k) && (subItem.c.a === 0 || subItem.c.a === undefined)) {
+                    subItem.c.k = [...lottieRgba];
+                  }
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+
+    processLayers(cloned.layers);
+    if (Array.isArray(cloned.assets)) {
+      cloned.assets.forEach(asset => {
+        if (Array.isArray(asset.layers)) processLayers(asset.layers);
+      });
+    }
+  }
+
+  // -----------------------------------------------------------
+  // 6. Inject Dynamic Sheet Data into Lottie JSON Layers
   // -----------------------------------------------------------
   function injectDataIntoLottieJson(lottieJson, rowData = {}, mappings = {}) {
     if (!lottieJson) return null;
@@ -323,6 +446,9 @@
     // Dynamic Photo / Image Asset Replacement from Sheet / Roster (Supports Multiple Images: Dynamic vs Static)
     injectImageAssets(cloned, rowData, mappings);
 
+    // Dynamic Accent Color Injection into Shape / Stripe Layers
+    injectAccentColor(cloned, rowData.accentColor || mappings._accentColor, mappings);
+
     return cloned;
   }
 
@@ -355,6 +481,9 @@
 
     // Also inject dynamic image into Lottie if rowData is provided (preserves static images)
     injectImageAssets(cloned, rowData, mappings);
+
+    // Also inject dynamic accent color
+    injectAccentColor(cloned, rowData.accentColor || mappings._accentColor, mappings);
 
     return cloned;
   }
@@ -472,10 +601,10 @@
     let animationDataToUse = lottieData;
 
     if (mode === 'in_animation') {
-      animationDataToUse = injectDataIntoLottieJson(lottieData, rowData, config.mappings || {});
+      animationDataToUse = injectDataIntoLottieJson(lottieData, { ...rowData, accentColor }, config.mappings || {});
     } else {
       // Overlay mode: blank out internal text layers in Lottie so they don't clash or render initials behind the overlay
-      animationDataToUse = blankOutLottieTextLayers(lottieData, rowData, config.mappings || {});
+      animationDataToUse = blankOutLottieTextLayers(lottieData, { ...rowData, accentColor }, config.mappings || {});
       const overlayEl = document.createElement('div');
       overlayEl.className = 'lottie-typography-layer relative z-10 w-full h-full';
       overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview);
@@ -530,7 +659,10 @@
   global.LottieEngine = {
     extractLottieTextLayers,
     extractLottieImageLayers,
+    extractLottieColorLayers,
     injectImageAssets,
+    injectAccentColor,
+    hexToLottieColor,
     injectDataIntoLottieJson,
     blankOutLottieTextLayers,
     buildBroadcastOverlayHTML,

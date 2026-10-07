@@ -2336,14 +2336,67 @@ function updateLottieMappingUI() {
     });
   }
 
-  // --- SECTION 2: Text Layers ---
+  // --- SECTION 2: Accent & Brand Color Layers ---
+  const colorLayers = (window.LottieEngine && currentLottieData)
+    ? window.LottieEngine.extractLottieColorLayers(currentLottieData)
+    : [];
+  const accentCandidateLayers = colorLayers.filter(l => l.isAccentLikely || /accent|stripe|highlight|border|brand|theme|tint|gold|bar/i.test(l.name));
+
+  if (accentCandidateLayers.length > 0) {
+    const colorHeader = document.createElement('div');
+    colorHeader.className = 'flex items-center justify-between text-[11px] font-sports font-bold uppercase tracking-wider text-emerald-400 mt-2 mb-1.5 pt-2 border-t border-slate-800';
+    colorHeader.innerHTML = `
+      <span>🎨 Accent & Color Layers (${accentCandidateLayers.length})</span>
+      <span class="text-[10px] text-slate-400 font-sans normal-case">Dynamic team/theme tint</span>
+    `;
+    lottieMappingContainer.appendChild(colorHeader);
+
+    accentCandidateLayers.forEach(clrLayer => {
+      const key = clrLayer.name;
+      if (lottieLayerMappings[key] === undefined) {
+        lottieLayerMappings[key] = 'accent';
+      }
+      const currentMapping = lottieLayerMappings[key];
+      const isAccent = currentMapping === 'accent' || currentMapping === 'primary';
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs mb-1.5';
+      row.innerHTML = `
+        <div class="flex items-center gap-1.5 min-w-0 flex-1">
+          <span class="w-2 h-2 rounded-full ${isAccent ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-500'} shrink-0"></span>
+          <span class="font-mono text-emerald-300 font-semibold truncate text-[11px]">${clrLayer.name}</span>
+          <span class="text-slate-500 text-[10px] shrink-0 font-sans">(Vector Shape)</span>
+        </div>
+        <div class="shrink-0 w-48">
+          <select class="lottie-color-select w-full bg-slate-950 border border-slate-700 text-white rounded p-1 text-[11px] outline-none" data-layer-name="${clrLayer.name}">
+            <option value="accent" ${currentMapping === 'accent' ? 'selected' : ''}>🎨 Dynamic Accent (Logo / Theme)</option>
+            <option value="__static__" ${currentMapping === '__static__' ? 'selected' : ''}>🔒 Keep Original Color</option>
+          </select>
+        </div>
+      `;
+
+      const selectEl = row.querySelector('.lottie-color-select');
+      selectEl.addEventListener('change', (e) => {
+        lottieLayerMappings[key] = e.target.value;
+        const dot = row.querySelector('span.rounded-full');
+        if (e.target.value === '__static__') {
+          dot.className = 'w-2 h-2 rounded-full bg-slate-500 shrink-0';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] shrink-0';
+        }
+        refreshLottiePreview();
+      });
+
+      lottieMappingContainer.appendChild(row);
+    });
+  }
+
+  // --- SECTION 3: Live Text Layers ---
   if (textLayers.length > 0) {
-    if (imageLayers.length > 0) {
-      const textHeader = document.createElement('div');
-      textHeader.className = 'flex items-center justify-between text-[11px] font-sports font-bold uppercase tracking-wider text-cyan-400 mt-2.5 mb-1.5 pt-2 border-t border-slate-800';
-      textHeader.innerHTML = `<span>✏️ Live Text Layers (${textLayers.length})</span>`;
-      lottieMappingContainer.appendChild(textHeader);
-    }
+    const textHeader = document.createElement('div');
+    textHeader.className = 'flex items-center justify-between text-[11px] font-sports font-bold uppercase tracking-wider text-cyan-400 mt-2.5 mb-1.5 pt-2 border-t border-slate-800';
+    textHeader.innerHTML = `<span>✏️ Live Text Layers (${textLayers.length})</span>`;
+    lottieMappingContainer.appendChild(textHeader);
 
     textLayers.forEach((layer) => {
       const key = layer.name;

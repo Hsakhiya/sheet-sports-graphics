@@ -10,10 +10,15 @@
  *  - "Category"   (League / Header Tag)
  *  - "Stat 1"     (Primary Stat)
  *  - "Stat 2"     (Secondary Stat)
+ *  - "Accent_Stripe" (DYNAMIC: Automatically colored by Team / Theme Accent Color)
  * 
  * Multi-Image Rule:
  *  - Name layers you want DYNAMIC: "Photo", "Player", "Logo", or "Team Logo"
  *  - Name layers you want STATIC:  "Sponsor", "League", "Watermark", or "Static"
+ * 
+ * Dynamic Accent Color Rule:
+ *  - Name shape layers you want colored dynamically: "Accent", "Accent_Stripe", "Accent_Bar", "Highlight", "Stripe"
+ *  - Name stroke/fill elements inside shapes: "Accent", "Accent_Stroke", or "Border"
  * 
  * Usage in After Effects:
  *  File > Scripts > Run Script File... > Select this .jsx file
