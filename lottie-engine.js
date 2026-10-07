@@ -103,7 +103,152 @@
   }
 
   // -----------------------------------------------------------
-  // 2. Inject Dynamic Sheet Data into Lottie JSON Text Layers
+  // 2. Extract Image Layers from Lottie JSON
+  // -----------------------------------------------------------
+  function extractLottieImageLayers(lottieJson) {
+    if (!lottieJson) return [];
+    const found = [];
+    const seenAssetIds = new Set();
+
+    // Map of asset ID -> asset object
+    const assetMap = new Map();
+    if (Array.isArray(lottieJson.assets)) {
+      lottieJson.assets.forEach(asset => {
+        if (typeof asset.p === 'string' && (asset.w !== undefined || asset.h !== undefined)) {
+          assetMap.set(asset.id, asset);
+        }
+      });
+    }
+
+    function inspectLayers(layers) {
+      if (!Array.isArray(layers)) return;
+      layers.forEach(layer => {
+        // Image layer (ty === 2) that references an asset
+        if (layer.ty === 2 && layer.refId) {
+          const asset = assetMap.get(layer.refId);
+          seenAssetIds.add(layer.refId);
+          const layerNm = (layer.nm || '').toLowerCase();
+
+          // Heuristic: Is this layer likely dynamic (e.g. Photo / Player / Team Logo)
+          // vs likely static (e.g. Sponsor / Tournament / Watermark / BG)?
+          const isStaticKeyword = /static|sponsor|tourn|league|bg|backplate|watermark|banner|event|fixed|ad|partner|icon_bg/i.test(layerNm);
+          const isDynamicKeyword = /photo|athlete|player|team.?logo|club.?logo|dynamic|player.?pic|headshot|avatar|crest|badge|logo|pic/i.test(layerNm);
+          const isDynamicLikely = isDynamicKeyword && !isStaticKeyword;
+
+          found.push({
+            id: layer.ind || layer.nm,
+            name: layer.nm || `Image_${layer.refId}`,
+            assetId: layer.refId,
+            width: asset ? asset.w : 0,
+            height: asset ? asset.h : 0,
+            isDynamicLikely,
+            hasEmbeddedData: !!(asset && asset.p && asset.p.startsWith('data:'))
+          });
+        }
+      });
+    }
+
+    inspectLayers(lottieJson.layers);
+
+    if (Array.isArray(lottieJson.assets)) {
+      lottieJson.assets.forEach(asset => {
+        if (Array.isArray(asset.layers)) {
+          inspectLayers(asset.layers);
+        }
+      });
+    }
+
+    // Also include any image assets not explicitly referenced by a ty:2 layer
+    assetMap.forEach((asset, assetId) => {
+      if (!seenAssetIds.has(assetId)) {
+        const assetName = String(asset.id || assetId);
+        const isDynamicLikely = /photo|player|logo|dynamic/i.test(assetName);
+        found.push({
+          id: assetId,
+          name: assetName,
+          assetId: assetId,
+          width: asset.w || 0,
+          height: asset.h || 0,
+          isDynamicLikely,
+          hasEmbeddedData: !!(asset.p && asset.p.startsWith('data:'))
+        });
+      }
+    });
+
+    return found;
+  }
+
+  // -----------------------------------------------------------
+  // 3. Inject Dynamic Image into Targeted Image Asset(s)
+  // Preserves ALL static image assets (sponsors, watermarks, etc.) completely intact!
+  // -----------------------------------------------------------
+  function injectImageAssets(cloned, rowData = {}, mappings = {}) {
+    if (!cloned || !Array.isArray(cloned.assets)) return;
+
+    const imageLayers = extractLottieImageLayers(cloned);
+    if (imageLayers.length === 0) return;
+
+    const assetReplacements = new Map(); // assetId -> newUrl
+    let hasExplicitMapping = false;
+
+    // 1. Check if user has explicitly mapped any layer or asset in mappings
+    imageLayers.forEach(img => {
+      const mapped = mappings[img.name] || mappings[img.assetId];
+      if (mapped !== undefined && mapped !== '') {
+        hasExplicitMapping = true;
+        if (mapped !== '__static__') {
+          // Dynamic mapping selected!
+          let imgVal = '';
+          if (mapped === 'photo' || mapped === 'logo') {
+            imgVal = rowData.photo || rowData.logo;
+          } else if (rowData[mapped]) {
+            imgVal = rowData[mapped];
+          } else if (rowData.raw && rowData.raw[mapped]) {
+            imgVal = rowData.raw[mapped];
+          } else {
+            imgVal = rowData.photo;
+          }
+
+          const norm = normalizeImageUrl(imgVal);
+          if (norm) {
+            assetReplacements.set(img.assetId, norm);
+          }
+        }
+        // If mapped === '__static__', do nothing -> it stays static!
+      }
+    });
+
+    // 2. Auto-detection if no explicit image layer mapping was set:
+    if (!hasExplicitMapping) {
+      // Find the best dynamic candidate:
+      // A) First layer matching dynamic keywords
+      let candidate = imageLayers.find(img => img.isDynamicLikely);
+      // B) If only 1 image layer exists in the entire template, treat it as dynamic
+      if (!candidate && imageLayers.length === 1) {
+        candidate = imageLayers[0];
+      }
+
+      const photoUrl = normalizeImageUrl(rowData.photo);
+      if (candidate && photoUrl) {
+        assetReplacements.set(candidate.assetId, photoUrl);
+      }
+    }
+
+    // 3. Apply replacement ONLY to targeted asset IDs
+    if (assetReplacements.size > 0) {
+      cloned.assets.forEach(asset => {
+        if (assetReplacements.has(asset.id)) {
+          asset.u = '';
+          asset.p = assetReplacements.get(asset.id);
+          asset.e = 1;
+        }
+        // Any other asset is completely skipped and stays 100% static!
+      });
+    }
+  }
+
+  // -----------------------------------------------------------
+  // 4. Inject Dynamic Sheet Data into Lottie JSON Layers
   // -----------------------------------------------------------
   function injectDataIntoLottieJson(lottieJson, rowData = {}, mappings = {}) {
     if (!lottieJson) return null;
@@ -168,18 +313,8 @@
       });
     }
 
-    // Dynamic Photo / Image Asset Replacement from Sheet / Roster
-    const photoUrl = normalizeImageUrl(rowData.photo);
-    if (photoUrl && Array.isArray(cloned.assets)) {
-      cloned.assets.forEach(asset => {
-        // Match image assets in Lottie (assets with 'p' filename/dataURI and dimensions)
-        if (typeof asset.p === 'string' && (asset.w !== undefined || asset.h !== undefined)) {
-          asset.u = '';
-          asset.p = photoUrl;
-          asset.e = 1;
-        }
-      });
-    }
+    // Dynamic Photo / Image Asset Replacement from Sheet / Roster (Supports Multiple Images: Dynamic vs Static)
+    injectImageAssets(cloned, rowData, mappings);
 
     return cloned;
   }
@@ -187,7 +322,7 @@
   // -----------------------------------------------------------
   // Helper: Blank out internal Lottie text layers for Overlay Mode
   // -----------------------------------------------------------
-  function blankOutLottieTextLayers(lottieJson) {
+  function blankOutLottieTextLayers(lottieJson, rowData = {}, mappings = {}) {
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
     function clearText(layers) {
@@ -210,6 +345,10 @@
         if (Array.isArray(asset.layers)) clearText(asset.layers);
       });
     }
+
+    // Also inject dynamic image into Lottie if rowData is provided (preserves static images)
+    injectImageAssets(cloned, rowData, mappings);
+
     return cloned;
   }
 
@@ -329,7 +468,7 @@
       animationDataToUse = injectDataIntoLottieJson(lottieData, rowData, config.mappings || {});
     } else {
       // Overlay mode: blank out internal text layers in Lottie so they don't clash or render initials behind the overlay
-      animationDataToUse = blankOutLottieTextLayers(lottieData);
+      animationDataToUse = blankOutLottieTextLayers(lottieData, rowData, config.mappings || {});
       const overlayEl = document.createElement('div');
       overlayEl.className = 'lottie-typography-layer relative z-10 w-full h-full';
       overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview);
@@ -383,6 +522,8 @@
   // Export to global
   global.LottieEngine = {
     extractLottieTextLayers,
+    extractLottieImageLayers,
+    injectImageAssets,
     injectDataIntoLottieJson,
     blankOutLottieTextLayers,
     buildBroadcastOverlayHTML,

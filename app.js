@@ -2202,6 +2202,7 @@ function loadLottieJson(jsonData, filename = 'custom_motion.json') {
   currentLottieData = jsonData;
   currentLottieFilename = filename;
   if (lottieFilenameLabel) lottieFilenameLabel.textContent = filename;
+  lottieLayerMappings = {};
 
   updateLottieMappingUI();
 
@@ -2228,15 +2229,23 @@ function updateLottieMappingUI() {
   if (!lottieMappingContainer) return;
   lottieMappingContainer.innerHTML = '';
 
-  const layers = (window.LottieEngine && currentLottieData)
+  const textLayers = (window.LottieEngine && currentLottieData)
     ? window.LottieEngine.extractLottieTextLayers(currentLottieData)
     : [];
 
+  const imageLayers = (window.LottieEngine && currentLottieData)
+    ? window.LottieEngine.extractLottieImageLayers(currentLottieData)
+    : [];
+
+  const totalLayers = textLayers.length + imageLayers.length;
+
   if (lottieLayersCount) {
-    lottieLayersCount.textContent = `${layers.length} Text Layer${layers.length === 1 ? '' : 's'} Detected`;
+    const textPart = `${textLayers.length} Text`;
+    const imgPart = imageLayers.length > 0 ? `, ${imageLayers.length} Image Layer${imageLayers.length === 1 ? '' : 's'}` : '';
+    lottieLayersCount.textContent = `${textPart}${imgPart} Detected`;
   }
 
-  if (layers.length === 0) {
+  if (totalLayers === 0) {
     if (lottieMappingSection) lottieMappingSection.classList.add('hidden');
     return;
   }
@@ -2259,64 +2268,126 @@ function updateLottieMappingUI() {
     lottieMappingContainer.appendChild(glyphNotice);
   }
 
-  layers.forEach((layer) => {
-    const key = layer.name;
-    const currentMapping = lottieLayerMappings[key] || '';
-
-    const row = document.createElement('div');
-    row.className = 'flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs';
-    row.innerHTML = `
-      <div class="flex items-center gap-1.5 min-w-0 flex-1">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
-        <span class="font-mono text-cyan-300 font-semibold truncate text-[11px]">${layer.name}</span>
-        <span class="text-slate-500 text-[10px] truncate max-w-[90px] font-sans">("${layer.text || ''}")</span>
-      </div>
-      <div class="shrink-0 w-44">
-        <select class="lottie-layer-select w-full bg-slate-950 border border-slate-700 text-white rounded p-1 text-[11px] outline-none" data-layer-name="${layer.name}">
-          <option value="">-- Do Not Replace --</option>
-          <optgroup label="Broadcast Data Fields">
-            <option value="name" ${currentMapping === 'name' ? 'selected' : ''}>👤 Athlete Name</option>
-            <option value="subtitle" ${currentMapping === 'subtitle' ? 'selected' : ''}>🛡️ Team / Subtitle</option>
-            <option value="number" ${currentMapping === 'number' ? 'selected' : ''}>🔢 Jersey Number</option>
-            <option value="category" ${currentMapping === 'category' ? 'selected' : ''}>🏷️ Category Tag</option>
-            <option value="stat1" ${currentMapping === 'stat1' ? 'selected' : ''}>📊 Stat 1 (Label + Value)</option>
-            <option value="stat2" ${currentMapping === 'stat2' ? 'selected' : ''}>📈 Stat 2 (Label + Value)</option>
-          </optgroup>
-          ${sheetColumns.length > 0 ? `
-            <optgroup label="Google Sheet Raw Columns">
-              ${sheetColumns.map(col => `
-                <option value="${col}" ${currentMapping === col ? 'selected' : ''}>${col}</option>
-              `).join('')}
-            </optgroup>
-          ` : ''}
-        </select>
-      </div>
+  // --- SECTION 1: Image Layers (Dynamic Photo vs Static Logos/Sponsors) ---
+  if (imageLayers.length > 0) {
+    const imgHeader = document.createElement('div');
+    imgHeader.className = 'flex items-center justify-between text-[11px] font-sports font-bold uppercase tracking-wider text-amber-400 mb-1.5 pt-1';
+    imgHeader.innerHTML = `
+      <span>🖼️ Image / Logo Layers (${imageLayers.length})</span>
+      <span class="text-[10px] text-slate-400 font-sans normal-case">Dynamic vs Static</span>
     `;
+    lottieMappingContainer.appendChild(imgHeader);
 
-    const selectEl = row.querySelector('.lottie-layer-select');
-    selectEl.addEventListener('change', (e) => {
-      lottieLayerMappings[key] = e.target.value;
-      if (selectTemplate.value === 'lottie_motion') {
-        if (activeRowIndex !== null) {
-          takeRowOnAir(activeRowIndex, false);
-        } else if (rawSheetData.length > 0) {
-          const mapped = getMappedRowData(rawSheetData[0]);
-          resolveAccentColor(mapped, selectTheme.value).then(({ accentColor }) => {
-            renderConfidencePreview({
-              template: 'lottie_motion',
-              theme: selectTheme.value,
-              accentColor,
-              lottieData: currentLottieData,
-              lottieConfig: { ...lottieConfig, mappings: lottieLayerMappings },
-              data: mapped
-            });
-          });
-        }
+    if (imageLayers.length > 1) {
+      const multiImgNotice = document.createElement('div');
+      multiImgNotice.className = 'p-2 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-300 text-[11px] flex items-start gap-2 mb-2';
+      multiImgNotice.innerHTML = `
+        <span class="text-sm shrink-0">💡</span>
+        <div><strong>Multiple images detected:</strong> Leave static logos (sponsors, tournament, watermarks) as <em>"Keep Static"</em> and map your player photo or team crest to <em>"Dynamic Photo"</em>.</div>
+      `;
+      lottieMappingContainer.appendChild(multiImgNotice);
+    }
+
+    imageLayers.forEach(img => {
+      const key = img.name;
+      if (lottieLayerMappings[key] === undefined) {
+        lottieLayerMappings[key] = img.isDynamicLikely ? 'photo' : '__static__';
       }
-    });
+      const currentMapping = lottieLayerMappings[key];
+      const isDynamic = currentMapping !== '__static__' && currentMapping !== '';
+      const dimText = (img.width && img.height) ? `${img.width}×${img.height}` : 'Image';
 
-    lottieMappingContainer.appendChild(row);
-  });
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs mb-1.5';
+      row.innerHTML = `
+        <div class="flex items-center gap-1.5 min-w-0 flex-1">
+          <span class="w-2 h-2 rounded-full ${isDynamic ? 'bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'bg-slate-500'} shrink-0"></span>
+          <span class="font-mono text-cyan-300 font-semibold truncate text-[11px]">${img.name}</span>
+          <span class="text-slate-500 text-[10px] shrink-0 font-sans">(${dimText})</span>
+        </div>
+        <div class="shrink-0 w-48">
+          <select class="lottie-image-select w-full bg-slate-950 border border-slate-700 text-white rounded p-1 text-[11px] outline-none" data-layer-name="${img.name}">
+            <option value="__static__" ${currentMapping === '__static__' ? 'selected' : ''}>🔒 Keep Static (Original Image)</option>
+            <option value="photo" ${currentMapping === 'photo' ? 'selected' : ''}>🖼️ Dynamic Photo / Logo</option>
+            ${sheetColumns.length > 0 ? `
+              <optgroup label="Google Sheet Raw Columns">
+                ${sheetColumns.map(col => `
+                  <option value="${col}" ${currentMapping === col ? 'selected' : ''}>${col}</option>
+                `).join('')}
+              </optgroup>
+            ` : ''}
+          </select>
+        </div>
+      `;
+
+      const selectEl = row.querySelector('.lottie-image-select');
+      selectEl.addEventListener('change', (e) => {
+        lottieLayerMappings[key] = e.target.value;
+        const dot = row.querySelector('span.rounded-full');
+        if (e.target.value === '__static__') {
+          dot.className = 'w-2 h-2 rounded-full bg-slate-500 shrink-0';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(6,182,212,0.8)] shrink-0';
+        }
+        refreshLottiePreview();
+      });
+
+      lottieMappingContainer.appendChild(row);
+    });
+  }
+
+  // --- SECTION 2: Text Layers ---
+  if (textLayers.length > 0) {
+    if (imageLayers.length > 0) {
+      const textHeader = document.createElement('div');
+      textHeader.className = 'flex items-center justify-between text-[11px] font-sports font-bold uppercase tracking-wider text-cyan-400 mt-2.5 mb-1.5 pt-2 border-t border-slate-800';
+      textHeader.innerHTML = `<span>✏️ Live Text Layers (${textLayers.length})</span>`;
+      lottieMappingContainer.appendChild(textHeader);
+    }
+
+    textLayers.forEach((layer) => {
+      const key = layer.name;
+      const currentMapping = lottieLayerMappings[key] || '';
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-2 p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs mb-1.5';
+      row.innerHTML = `
+        <div class="flex items-center gap-1.5 min-w-0 flex-1">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
+          <span class="font-mono text-cyan-300 font-semibold truncate text-[11px]">${layer.name}</span>
+          <span class="text-slate-500 text-[10px] truncate max-w-[90px] font-sans">("${layer.text || ''}")</span>
+        </div>
+        <div class="shrink-0 w-48">
+          <select class="lottie-layer-select w-full bg-slate-950 border border-slate-700 text-white rounded p-1 text-[11px] outline-none" data-layer-name="${layer.name}">
+            <option value="">-- Do Not Replace --</option>
+            <optgroup label="Broadcast Data Fields">
+              <option value="name" ${currentMapping === 'name' ? 'selected' : ''}>👤 Athlete Name</option>
+              <option value="subtitle" ${currentMapping === 'subtitle' ? 'selected' : ''}>🛡️ Team / Subtitle</option>
+              <option value="number" ${currentMapping === 'number' ? 'selected' : ''}>🔢 Jersey Number</option>
+              <option value="category" ${currentMapping === 'category' ? 'selected' : ''}>🏷️ Category Tag</option>
+              <option value="stat1" ${currentMapping === 'stat1' ? 'selected' : ''}>📊 Stat 1 (Label + Value)</option>
+              <option value="stat2" ${currentMapping === 'stat2' ? 'selected' : ''}>📈 Stat 2 (Label + Value)</option>
+            </optgroup>
+            ${sheetColumns.length > 0 ? `
+              <optgroup label="Google Sheet Raw Columns">
+                ${sheetColumns.map(col => `
+                  <option value="${col}" ${currentMapping === col ? 'selected' : ''}>${col}</option>
+                `).join('')}
+              </optgroup>
+            ` : ''}
+          </select>
+        </div>
+      `;
+
+      const selectEl = row.querySelector('.lottie-layer-select');
+      selectEl.addEventListener('change', (e) => {
+        lottieLayerMappings[key] = e.target.value;
+        refreshLottiePreview();
+      });
+
+      lottieMappingContainer.appendChild(row);
+    });
+  }
 }
 
 function refreshLottiePreview() {

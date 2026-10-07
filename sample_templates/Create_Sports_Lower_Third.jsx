@@ -2,12 +2,18 @@
  * Adobe After Effects Automation Script (.jsx)
  * Creates a Broadcast-Ready Sports Lower-Third Composition
  * Pre-configured with exact layer names for Lottie / Bodymovin export:
+ *  - "Photo"      (DYNAMIC: Team Logo / Athlete Photo PNG — swapped per row)
+ *  - "Sponsor"    (STATIC: Sponsor logo / League badge — stays unchanged)
  *  - "Name"       (Athlete Name)
  *  - "Team"       (Subtitle / Club)
  *  - "Number"     (Jersey #)
  *  - "Category"   (League / Header Tag)
  *  - "Stat 1"     (Primary Stat)
  *  - "Stat 2"     (Secondary Stat)
+ * 
+ * Multi-Image Rule:
+ *  - Name layers you want DYNAMIC: "Photo", "Player", "Logo", or "Team Logo"
+ *  - Name layers you want STATIC:  "Sponsor", "League", "Watermark", or "Static"
  * 
  * Usage in After Effects:
  *  File > Scripts > Run Script File... > Select this .jsx file
@@ -239,7 +245,8 @@
       "SUCCESS! Sports Lower-Third Composition Created.\n\n" +
       "Saved to: sample_templates/Sports_Lower_Third.aep\n\n" +
       "Layers Configured for Lottie Export:\n" +
-      " • 'Photo' (Logo / Athlete Photo Layer)\n" +
+      " • 'Photo' (DYNAMIC: Swapped with team logo or athlete photo)\n" +
+      " • 'Sponsor' / 'League' (STATIC: If added, stays permanent)\n" +
       " • 'Name' (Athlete Name)\n" +
       " • 'Team' (Subtitle / Club)\n" +
       " • 'Number' (Jersey #)\n" +
