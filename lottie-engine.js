@@ -687,7 +687,7 @@
       // Overlay mode: blank out internal text layers in Lottie so they don't clash or render initials behind the overlay
       animationDataToUse = blankOutLottieTextLayers(lottieData, { ...rowData, accentColor }, mappings, photoScale, photoFit, photoOffsets);
       const overlayEl = document.createElement('div');
-      overlayEl.className = 'lottie-typography-layer relative z-10 w-full h-full';
+      overlayEl.className = 'lottie-typography-layer z-10';
       overlayEl.innerHTML = buildBroadcastOverlayHTML(rowData, accentColor, isPreview, { photoScale, photoFit, photoOffsets });
       root.appendChild(overlayEl);
     }

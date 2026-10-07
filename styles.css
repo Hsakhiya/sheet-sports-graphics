@@ -434,10 +434,12 @@
 
 .lottie-broadcast-fullframe .lottie-typography-layer {
   position: absolute !important;
-  left: 140px !important;
-  bottom: 80px !important;
-  width: 820px !important;
+  left: 60px !important;
+  bottom: 50px !important;
+  width: calc(100vw - 120px) !important;
+  max-width: 920px !important;
   height: 160px !important;
   display: flex !important;
   align-items: center !important;
+  z-index: 10 !important;
 }

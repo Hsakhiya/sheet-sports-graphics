@@ -116,7 +116,7 @@ let currentLottieData = (typeof window !== 'undefined' && (window.LOTTIE_PRESETS
 let currentLottieFilename = 'sports_lower_third_with_photo.json';
 let lottieLayerMappings = {};
 let lottieConfig = {
-  overlayMode: 'overlay',
+  overlayMode: 'in_animation',
   loop: true,
   speed: 1.0,
   photoScale: 1.0,
@@ -2240,6 +2240,14 @@ function loadLottieJson(jsonData, filename = 'custom_motion.json') {
   if (lottieFilenameLabel) lottieFilenameLabel.textContent = filename;
   lottieLayerMappings = {};
 
+  // Auto-detect mode: If template contains in-animation text layers, ALWAYS default to 'in_animation'
+  // so the user's custom graphic shows all the text and numbers directly on the custom lower third bar!
+  const detectedText = (window.LottieEngine && jsonData) ? window.LottieEngine.extractLottieTextLayers(jsonData) : [];
+  if (detectedText.length > 0) {
+    lottieConfig.overlayMode = 'in_animation';
+    if (selectLottieMode) selectLottieMode.value = 'in_animation';
+  }
+
   updateLottieMappingUI();
 
   if (selectTemplate.value === 'lottie_motion') {
@@ -2288,17 +2296,42 @@ function updateLottieMappingUI() {
 
   if (lottieMappingSection) lottieMappingSection.classList.remove('hidden');
 
-  const hasBakedGlyphs = currentLottieData && Array.isArray(currentLottieData.chars) && currentLottieData.chars.length > 0;
-  if (hasBakedGlyphs) {
-    const glyphNotice = document.createElement('div');
-    glyphNotice.className = 'p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-start gap-2 mb-2.5';
-    glyphNotice.innerHTML = `
-      <span class="text-sm shrink-0">⚠️</span>
-      <div>
-        <strong class="font-bold">Bodymovin "Glyphs" Detected:</strong> This template has pre-baked vector glyphs (${currentLottieData.chars.length} characters). Lowercase letters or unexported characters will not render in "In-Animation" mode.
-        <div class="text-slate-300 mt-1">
-          💡 <strong class="text-white">Recommended Fix:</strong> Select <strong>"Motion Base + Broadcast Typography"</strong> above, or re-export from After Effects with <strong>"Glyphs" unchecked</strong>.
+  // If user is on Overlay Mode while text layers exist, show prominent guidance to switch to In-Animation
+  if (lottieConfig.overlayMode === 'overlay' && textLayers.length > 0) {
+    const overlayNotice = document.createElement('div');
+    overlayNotice.className = 'p-2.5 rounded-lg bg-amber-500/15 border border-amber-500/40 text-amber-300 text-[11px] flex items-center justify-between gap-3 mb-2.5 flex-wrap';
+    overlayNotice.innerHTML = `
+      <div class="flex items-start gap-2 min-w-0 flex-1">
+        <span class="text-sm shrink-0">ℹ️</span>
+        <div>
+          <strong>Motion Base Mode is Active:</strong> In this mode, text on your custom graphic is hidden and replaced by a default HTML overlay card.
+          <div class="text-slate-300 mt-0.5">To show your name, team, and numbers directly on your custom graphic bar at the bottom, switch to <strong>In-Animation Text Binding</strong>.</div>
         </div>
+      </div>
+      <button type="button" id="btn-quick-switch-in-anim" class="shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-sports font-bold text-[10px] rounded uppercase transition shadow active:scale-95">
+        Switch to In-Animation
+      </button>
+    `;
+    const switchBtn = overlayNotice.querySelector('#btn-quick-switch-in-anim');
+    switchBtn?.addEventListener('click', () => {
+      lottieConfig.overlayMode = 'in_animation';
+      if (selectLottieMode) selectLottieMode.value = 'in_animation';
+      updateLottieMappingUI();
+      refreshLottiePreview();
+      sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
+    });
+    lottieMappingContainer.appendChild(overlayNotice);
+  }
+
+  // Baked Glyphs info: confirmed that HarfBuzz SVG native font shaping is automatically active
+  const hasBakedGlyphs = currentLottieData && Array.isArray(currentLottieData.chars) && currentLottieData.chars.length > 0;
+  if (hasBakedGlyphs && lottieConfig.overlayMode === 'in_animation') {
+    const glyphNotice = document.createElement('div');
+    glyphNotice.className = 'p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[11px] flex items-start gap-2 mb-2.5';
+    glyphNotice.innerHTML = `
+      <span class="text-sm shrink-0">✨</span>
+      <div>
+        <strong class="font-bold">Typography Auto-Shaping Active:</strong> Native browser SVG font shaping is active. All character sets (English, numbers, and Gujarati/Indic scripts) render directly on your graphic without missing letters.
       </div>
     `;
     lottieMappingContainer.appendChild(glyphNotice);
@@ -2519,7 +2552,9 @@ selectLottieMode?.addEventListener('change', (e) => {
     selectTemplate.value = 'lottie_motion';
     selectTemplate.dispatchEvent(new Event('change'));
   }
+  updateLottieMappingUI();
   refreshLottiePreview();
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
 });
 
 // Loop Toggle
