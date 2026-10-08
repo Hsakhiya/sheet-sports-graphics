@@ -5,6 +5,8 @@ const channel = new BroadcastChannel(CHANNEL_NAME);
 const wrapper = document.getElementById('graphic-wrapper');
 let soundEnabled = true;
 let hideTimer = null;
+let hideExitTimer = null;
+let isHidingGraphic = false;
 let audioCtx = null;
 let currentGraphicPayload = null;
 
@@ -931,8 +933,18 @@ function showGraphic(payload) {
     clearTimeout(hideTimer);
     hideTimer = null;
   }
+  if (hideExitTimer) {
+    clearTimeout(hideExitTimer);
+    hideExitTimer = null;
+  }
+  isHidingGraphic = false;
 
-  // Build Graphic Markup / Canvas
+  // 1. Unhide wrapper FIRST and force layout reflow BEFORE mounting SVG / Lottie markup
+  // This guarantees SVG font metrics, getComputedTextLength, and HarfBuzz shaper have real positive geometry!
+  wrapper.classList.remove('hidden', 'anim-exit');
+  void wrapper.offsetWidth; // Force synchronous browser layout reflow
+
+  // 2. Build Graphic Markup / Canvas
   if (template === 'lottie_motion') {
     wrapper.innerHTML = '';
     if (window.LottieEngine && animData) {
@@ -944,8 +956,7 @@ function showGraphic(payload) {
     wrapper.innerHTML = buildGraphicHTML(template, data);
   }
 
-  // Animate Entrance cleanly
-  wrapper.classList.remove('hidden', 'anim-exit');
+  // 3. Animate Entrance cleanly
   if (isFullFrameLottie) {
     wrapper.classList.remove('anim-enter');
     wrapper.style.opacity = '1';
@@ -968,10 +979,8 @@ function showGraphic(payload) {
 }
 
 // Display Action: Clear / Hide Graphic
-let isHidingGraphic = false;
-
 function hideGraphic() {
-  if (wrapper.classList.contains('hidden') && !wrapper.classList.contains('anim-enter') && !wrapper.classList.contains('lottie-broadcast-fullframe')) return;
+  if (wrapper.classList.contains('hidden') && !wrapper.classList.contains('anim-enter') && !isHidingGraphic) return;
   if (isHidingGraphic) return;
 
   isHidingGraphic = true;
@@ -980,11 +989,15 @@ function hideGraphic() {
     clearTimeout(hideTimer);
     hideTimer = null;
   }
+  if (hideExitTimer) {
+    clearTimeout(hideExitTimer);
+    hideExitTimer = null;
+  }
 
   wrapper.classList.remove('anim-enter');
   wrapper.classList.add('anim-exit');
 
-  setTimeout(() => {
+  hideExitTimer = setTimeout(() => {
     wrapper.classList.add('hidden');
     wrapper.classList.remove('anim-exit');
     wrapper.style.opacity = '';
@@ -993,6 +1006,7 @@ function hideGraphic() {
     }
     wrapper.innerHTML = '';
     isHidingGraphic = false;
+    hideExitTimer = null;
   }, 420);
 }
 

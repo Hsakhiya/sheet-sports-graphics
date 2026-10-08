@@ -9,6 +9,82 @@
   // Active Lottie animation instances
   const activeLottieInstances = new Map();
 
+  // -------------------------------------------------------------
+  // Zero-Width Measurement Guard for SVG Text Elements
+  // Prevents character collapsing/blobbing into center when Bodymovin
+  // measures SVG text in display:none, detached, or transitioning DOM.
+  // -------------------------------------------------------------
+  (function installSvgTextMeasureGuard() {
+    if (typeof window === 'undefined') return;
+
+    const targets = [];
+    if (typeof SVGTextContentElement !== 'undefined' && SVGTextContentElement.prototype) {
+      targets.push(SVGTextContentElement.prototype);
+    }
+    if (typeof SVGElement !== 'undefined' && SVGElement.prototype && !targets.includes(SVGElement.prototype)) {
+      targets.push(SVGElement.prototype);
+    }
+
+    let fallbackCanvas = null;
+    let fallbackCtx = null;
+
+    targets.forEach(proto => {
+      if (!proto || !proto.getComputedTextLength || proto._textMeasureGuardActive) return;
+      proto._textMeasureGuardActive = true;
+      const originalMethod = proto.getComputedTextLength;
+
+      proto.getComputedTextLength = function() {
+        let len = 0;
+        try {
+          len = originalMethod.call(this);
+        } catch (e) {
+          len = 0;
+        }
+
+        // Return native length if valid and positive
+        if (typeof len === 'number' && len > 0) {
+          return len;
+        }
+
+        const text = this.textContent;
+        if (!text || text.length === 0) return 0;
+
+        // Fallback: Measure character width accurately using 2D Canvas context
+        try {
+          if (!fallbackCanvas && typeof document !== 'undefined') {
+            fallbackCanvas = document.createElement('canvas');
+            fallbackCtx = fallbackCanvas.getContext('2d');
+          }
+          if (fallbackCtx) {
+            const style = (typeof window.getComputedStyle === 'function') ? window.getComputedStyle(this) : null;
+            const fSize = (style && style.fontSize && style.fontSize !== '0px')
+              ? style.fontSize
+              : (this.style?.fontSize || this.getAttribute?.('font-size') || '100px');
+            const fFamily = (style && style.fontFamily && style.fontFamily !== '')
+              ? style.fontFamily
+              : (this.style?.fontFamily || this.getAttribute?.('font-family') || "'Anek Gujarati', 'Noto Sans Gujarati', Montserrat, Arial, sans-serif");
+            const fWeight = (style && style.fontWeight)
+              ? style.fontWeight
+              : (this.style?.fontWeight || this.getAttribute?.('font-weight') || 'normal');
+            const fStyle = (style && style.fontStyle)
+              ? style.fontStyle
+              : (this.style?.fontStyle || this.getAttribute?.('font-style') || 'normal');
+
+            fallbackCtx.font = `${fStyle} ${fWeight} ${fSize} ${fFamily}`;
+            const metrics = fallbackCtx.measureText(text);
+            if (metrics && typeof metrics.width === 'number' && metrics.width > 0) {
+              return metrics.width;
+            }
+          }
+        } catch (err) {}
+
+        // Fallback heuristic: standard character advance ~55% of font size
+        const numericSize = parseFloat(this.style?.fontSize || this.getAttribute?.('font-size') || '100') || 100;
+        return text.length * (numericSize * 0.55);
+      };
+    });
+  })();
+
   // Helper: Normalize image URLs (Local file paths, Google Drive, Dropbox, etc.)
   function normalizeImageUrl(url) {
     if (!url || typeof url !== 'string') return '';
@@ -445,22 +521,21 @@
     if (!lottieJson) return null;
     const cloned = JSON.parse(JSON.stringify(lottieJson));
 
-    // Check if incoming text data contains Indic / Gujarati or non-ASCII characters
-    const allIncomingText = `${rowData.name || ''} ${rowData.subtitle || ''} ${rowData.category || ''}`;
-    const hasIndicOrSpecialChars = /[\u0900-\u0D7F]/.test(allIncomingText);
+    // Remove static pre-baked glyph table when dynamic roster data is injected
+    // so Bodymovin renders true native SVG text using HarfBuzz shaper!
+    delete cloned.chars;
 
-    // If template has baked glyphs that are missing most of the alphabet (< 60 chars),
-    // OR if text contains Indic / Gujarati characters (which cannot use pre-baked Latin glyphs),
-    // remove the restricted glyph table so lottie-web renders native SVG text using the browser HarfBuzz shaper!
-    if (hasIndicOrSpecialChars || (Array.isArray(cloned.chars) && cloned.chars.length < 60)) {
-      delete cloned.chars;
-      if (cloned.fonts && Array.isArray(cloned.fonts.list)) {
-        cloned.fonts.list.forEach(f => {
-          f.fFamily = f.fFamily
-            ? `${f.fFamily}, 'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', Montserrat, Arial, sans-serif`
-            : "'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', Montserrat, Arial, sans-serif";
-        });
-      }
+    // Ensure all font definitions include the comprehensive font fallback stack
+    // covering Gujarati/Indic, Montserrat, Arial, and system sans-serif
+    if (cloned.fonts && Array.isArray(cloned.fonts.list)) {
+      const fallbackStack = "'Anek Gujarati', 'Noto Sans Gujarati', 'Shruti', Montserrat, Arial, sans-serif";
+      cloned.fonts.list.forEach(f => {
+        if (!f.fFamily) {
+          f.fFamily = fallbackStack;
+        } else if (!f.fFamily.includes('Anek Gujarati')) {
+          f.fFamily = `${f.fFamily}, ${fallbackStack}`;
+        }
+      });
     }
 
     let name = rowData.name || 'ATHLETE NAME';
@@ -711,6 +786,17 @@
 
       if (config.speed && config.speed > 0) {
         animInstance.setSpeed(config.speed);
+      }
+
+      // Schedule post-mount layout pass to ensure SVG viewBox is fully synchronized
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => {
+          try {
+            if (animInstance && typeof animInstance.resize === 'function') {
+              animInstance.resize();
+            }
+          } catch (e) {}
+        });
       }
 
       activeLottieInstances.set(container, animInstance);

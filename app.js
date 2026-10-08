@@ -1083,6 +1083,7 @@ function clearOnAir() {
   liveIndicatorText.className = 'font-sports font-extrabold text-sm tracking-widest text-slate-400 uppercase';
 
   previewRenderArea.innerHTML = '';
+  delete previewRenderArea._lastLottieKey;
 
   sendToDisplay('CLEAR', { msgId: generateMsgId('CLEAR') });
   renderRosterTable();
