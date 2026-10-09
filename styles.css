@@ -510,3 +510,45 @@
   animation: timerPulse 1.2s infinite ease-in-out;
 }
 
+/* Collapsible Panels System */
+.collapsible-panel {
+  transition: min-height 0.2s ease, max-height 0.2s ease, border-color 0.2s ease;
+}
+
+.collapsible-panel.collapsed {
+  min-height: 0 !important;
+  flex: 0 0 auto !important;
+}
+
+.collapsible-panel.collapsed .panel-header {
+  margin-bottom: 0 !important;
+  border-bottom: none !important;
+}
+
+.collapsible-panel.collapsed .panel-body {
+  display: none !important;
+}
+
+.panel-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.panel-collapse-btn:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 1px;
+}
+
+.panel-collapse-icon {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center center;
+}
+
+.collapsible-panel.collapsed .panel-collapse-icon {
+  transform: rotate(180deg);
+}
+

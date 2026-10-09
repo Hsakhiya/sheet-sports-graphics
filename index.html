@@ -104,94 +104,102 @@
     <div class="lg:col-span-12 xl:col-span-1 desk-col flex flex-col gap-5">
 
       <!-- Google Sheet Ingestion Card -->
-      <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-3">
+      <section id="sheet-source-card" class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <i data-lucide="sheet" class="w-4 h-4 text-emerald-400"></i>
             <h2 class="font-sports font-bold text-sm tracking-wider uppercase text-slate-200">Google Sheet Source</h2>
           </div>
-          <!-- Presets Dropdown / Buttons -->
-          <div class="flex items-center gap-1.5 text-xs">
-            <span class="text-slate-400 text-[11px] mr-1">Load Presets:</span>
-            <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="soccer">⚽ Soccer</button>
-            <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="cricket">🏏 Cricket</button>
-            <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="basketball">🏀 Basketball</button>
-            <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="match">⏱️ Score Bug</button>
-          </div>
-        </div>
-
-        <!-- URL Input & Fetch Button -->
-        <div class="flex flex-col sm:flex-row gap-2.5">
-          <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-              <i data-lucide="globe" class="w-4 h-4"></i>
+          <div class="flex items-center gap-2">
+            <!-- Presets Dropdown / Buttons -->
+            <div class="flex items-center gap-1.5 text-xs flex-wrap">
+              <span class="text-slate-400 text-[11px] mr-1">Load Presets:</span>
+              <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="soccer">⚽ Soccer</button>
+              <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="cricket">🏏 Cricket</button>
+              <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="basketball">🏀 Basketball</button>
+              <button class="preset-btn px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-preset="match">⏱️ Score Bug</button>
             </div>
-            <input
-              type="text"
-              id="sheet-url-input"
-              placeholder="Paste Google Sheet Share URL (e.g. https://docs.google.com/spreadsheets/d/...)"
-              class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition"
-            />
-          </div>
-
-          <button id="btn-fetch-sheet" class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-sports font-bold text-xs tracking-wider uppercase border border-slate-700 transition">
-            <i data-lucide="refresh-cw" id="fetch-spinner" class="w-4 h-4 text-emerald-400"></i>
-            <span>Load Sheet</span>
-          </button>
-
-          <!-- Upload CSV button -->
-          <label class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 font-medium text-xs border border-slate-700/80 cursor-pointer transition">
-            <i data-lucide="upload" class="w-4 h-4 text-slate-400"></i>
-            <span>Upload CSV</span>
-            <input type="file" id="csv-file-input" accept=".csv" class="hidden">
-          </label>
-
-          <!-- Download Sample CSV Templates -->
-          <div class="relative group">
-            <button class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700/80 transition">
-              <i data-lucide="download" class="w-4 h-4 text-amber-400"></i>
-              <span>Templates</span>
-              <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="sheet-source-card" title="Collapse panel" aria-label="Toggle Google Sheet Source panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
             </button>
-            <div class="absolute right-0 mt-1 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 hidden group-hover:block z-50">
-              <a href="sample_templates/soccer_roster.csv" download="google_sheet_soccer_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">⚽ Soccer Template (.csv)</a>
-              <a href="sample_templates/cricket_roster.csv" download="google_sheet_cricket_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">🏏 Cricket Template (.csv)</a>
-              <a href="sample_templates/match_scores.csv" download="google_sheet_match_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">⏱️ Match Bug Template (.csv)</a>
-              <a href="sample_templates/pro_sports_lower_third.svg" download="pro_sports_lower_third.svg" class="block px-3 py-2 text-xs text-amber-400 hover:bg-slate-800 hover:text-amber-300 transition border-t border-slate-800 font-semibold">🎨 Pro Angled SVG (.svg)</a>
-              <a href="sample_templates/minimal_sports_lower_third.svg" download="minimal_sports_lower_third.svg" class="block px-3 py-2 text-xs text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 transition font-semibold">⚡ Clean Minimal SVG (.svg)</a>
-              <a href="sample_templates/sports_lower_third_with_photo.json" download="sports_lower_third_with_photo.json" class="block px-3 py-2 text-xs text-cyan-400 hover:bg-slate-800 hover:text-cyan-300 transition border-t border-slate-800 font-semibold">⚡ Broadcast Lottie with PNG (.json)</a>
-              <a href="sample_templates/Create_Sports_Lower_Third.jsx" download="Create_Sports_Lower_Third.jsx" class="block px-3 py-2 text-xs text-indigo-400 hover:bg-slate-800 hover:text-indigo-300 transition font-semibold">🎬 After Effects Script (.jsx)</a>
-              <a href="sample_templates/Sports_Lower_Third.aep" download="Sports_Lower_Third.aep" class="block px-3 py-2 text-xs text-indigo-400 hover:bg-slate-800 hover:text-indigo-300 transition font-semibold">🎞️ After Effects Project (.aep)</a>
-            </div>
           </div>
         </div>
 
-        <!-- Sync options & instructions -->
-        <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
-          <div class="flex items-center gap-4">
-            <!-- Auto-refresh interval toggle -->
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="auto-refresh-toggle" class="rounded bg-slate-800 border-slate-700 text-red-500 focus:ring-0">
-              <span>Auto-Sync Sheet</span>
+        <div class="panel-body">
+          <!-- URL Input & Fetch Button -->
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="relative flex-1">
+              <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+              </div>
+              <input
+                type="text"
+                id="sheet-url-input"
+                placeholder="Paste Google Sheet Share URL (e.g. https://docs.google.com/spreadsheets/d/...)"
+                class="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition"
+              />
+            </div>
+
+            <button id="btn-fetch-sheet" class="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-sports font-bold text-xs tracking-wider uppercase border border-slate-700 transition">
+              <i data-lucide="refresh-cw" id="fetch-spinner" class="w-4 h-4 text-emerald-400"></i>
+              <span>Load Sheet</span>
+            </button>
+
+            <!-- Upload CSV button -->
+            <label class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 text-slate-300 font-medium text-xs border border-slate-700/80 cursor-pointer transition">
+              <i data-lucide="upload" class="w-4 h-4 text-slate-400"></i>
+              <span>Upload CSV</span>
+              <input type="file" id="csv-file-input" accept=".csv" class="hidden">
             </label>
-            <select id="auto-refresh-interval" class="bg-slate-900 border border-slate-700 text-slate-300 rounded px-2 py-0.5 text-[11px] focus:outline-none">
-              <option value="5000">Every 5s</option>
-              <option value="10000" selected>Every 10s</option>
-              <option value="30000">Every 30s</option>
-            </select>
+
+            <!-- Download Sample CSV Templates -->
+            <div class="relative group">
+              <button class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs border border-slate-700/80 transition">
+                <i data-lucide="download" class="w-4 h-4 text-amber-400"></i>
+                <span>Templates</span>
+                <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+              </button>
+              <div class="absolute right-0 mt-1 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1 hidden group-hover:block z-50">
+                <a href="sample_templates/soccer_roster.csv" download="google_sheet_soccer_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">⚽ Soccer Template (.csv)</a>
+                <a href="sample_templates/cricket_roster.csv" download="google_sheet_cricket_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">🏏 Cricket Template (.csv)</a>
+                <a href="sample_templates/match_scores.csv" download="google_sheet_match_template.csv" class="block px-3 py-2 text-xs text-slate-300 hover:bg-slate-800 hover:text-white transition">⏱️ Match Bug Template (.csv)</a>
+                <a href="sample_templates/pro_sports_lower_third.svg" download="pro_sports_lower_third.svg" class="block px-3 py-2 text-xs text-amber-400 hover:bg-slate-800 hover:text-amber-300 transition border-t border-slate-800 font-semibold">🎨 Pro Angled SVG (.svg)</a>
+                <a href="sample_templates/minimal_sports_lower_third.svg" download="minimal_sports_lower_third.svg" class="block px-3 py-2 text-xs text-emerald-400 hover:bg-slate-800 hover:text-emerald-300 transition font-semibold">⚡ Clean Minimal SVG (.svg)</a>
+                <a href="sample_templates/sports_lower_third_with_photo.json" download="sports_lower_third_with_photo.json" class="block px-3 py-2 text-xs text-cyan-400 hover:bg-slate-800 hover:text-cyan-300 transition border-t border-slate-800 font-semibold">⚡ Broadcast Lottie with PNG (.json)</a>
+                <a href="sample_templates/Create_Sports_Lower_Third.jsx" download="Create_Sports_Lower_Third.jsx" class="block px-3 py-2 text-xs text-indigo-400 hover:bg-slate-800 hover:text-indigo-300 transition font-semibold">🎬 After Effects Script (.jsx)</a>
+                <a href="sample_templates/Sports_Lower_Third.aep" download="Sports_Lower_Third.aep" class="block px-3 py-2 text-xs text-indigo-400 hover:bg-slate-800 hover:text-indigo-300 transition font-semibold">🎞️ After Effects Project (.aep)</a>
+              </div>
+            </div>
           </div>
 
-          <div class="flex items-center gap-1.5 text-slate-500 text-[11px]">
-            <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
-            <span>Google Sheet must be shared as: <strong class="text-slate-300">"Anyone with the link can view"</strong></span>
+          <!-- Sync options & instructions -->
+          <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between text-xs text-slate-400 gap-2">
+            <div class="flex items-center gap-4">
+              <!-- Auto-refresh interval toggle -->
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="auto-refresh-toggle" class="rounded bg-slate-800 border-slate-700 text-red-500 focus:ring-0">
+                <span>Auto-Sync Sheet</span>
+              </label>
+              <select id="auto-refresh-interval" class="bg-slate-900 border border-slate-700 text-slate-300 rounded px-2 py-0.5 text-[11px] focus:outline-none">
+                <option value="5000">Every 5s</option>
+                <option value="10000" selected>Every 10s</option>
+                <option value="30000">Every 30s</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-1.5 text-slate-500 text-[11px]">
+              <i data-lucide="info" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span>Google Sheet must be shared as: <strong class="text-slate-300">"Anyone with the link can view"</strong></span>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Data Table Roster Card -->
-      <section class="bg-[#121826] border border-slate-800 rounded-2xl flex-1 flex flex-col shadow-xl overflow-hidden min-h-[460px]">
+      <section id="roster-table-card" class="bg-[#121826] border border-slate-800 rounded-2xl flex-1 flex flex-col shadow-xl overflow-hidden min-h-[460px] collapsible-panel">
         <!-- Table Toolbar -->
-        <div class="px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/50">
+        <div class="panel-header px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-900/50">
           <div class="flex items-center gap-2">
             <span class="font-sports font-bold text-sm tracking-wider uppercase text-white">Roster & Event Items</span>
             <span id="row-count-badge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-xs font-mono">0 items</span>
@@ -214,80 +222,87 @@
               <i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i>
               <span>Column Map</span>
             </button>
+
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="roster-table-card" title="Collapse panel" aria-label="Toggle Roster & Event Items panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
+            </button>
           </div>
         </div>
 
-        <!-- Collapsible Column Mapping Drawer -->
-        <div id="column-mapping-drawer" class="hidden p-4 bg-slate-950/80 border-b border-slate-800 text-xs">
-          <div class="text-[11px] font-sports font-bold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center justify-between">
-            <span>Map Your Google Sheet Columns</span>
-            <span class="text-slate-500 font-sans font-normal text-[10px]">Auto-detected from CSV headers</span>
+        <div class="panel-body flex-1 flex flex-col overflow-hidden">
+          <!-- Collapsible Column Mapping Drawer -->
+          <div id="column-mapping-drawer" class="hidden p-4 bg-slate-950/80 border-b border-slate-800 text-xs">
+            <div class="text-[11px] font-sports font-bold uppercase tracking-wider text-amber-400 mb-2.5 flex items-center justify-between">
+              <span>Map Your Google Sheet Columns</span>
+              <span class="text-slate-500 font-sans font-normal text-[10px]">Auto-detected from CSV headers</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Title / Athlete Name</label>
+                <select id="map-name" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Team / Subtitle</label>
+                <select id="map-subtitle" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Jersey / Badge #</label>
+                <select id="map-number" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Photo / Avatar URL</label>
+                <select id="map-photo" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 1 Column</label>
+                <select id="map-stat1" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 2 Column</label>
+                <select id="map-stat2" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 3 Column</label>
+                <select id="map-stat3" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 4 Column</label>
+                <select id="map-stat4" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+              <div>
+                <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Accent / Team Color (Optional)</label>
+                <select id="map-color" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
+              </div>
+            </div>
           </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Title / Athlete Name</label>
-              <select id="map-name" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Team / Subtitle</label>
-              <select id="map-subtitle" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Jersey / Badge #</label>
-              <select id="map-number" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Photo / Avatar URL</label>
-              <select id="map-photo" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 1 Column</label>
-              <select id="map-stat1" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 2 Column</label>
-              <select id="map-stat2" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 3 Column</label>
-              <select id="map-stat3" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Stat 4 Column</label>
-              <select id="map-stat4" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-            <div>
-              <label class="block text-slate-400 text-[10px] uppercase font-semibold mb-1">Accent / Team Color (Optional)</label>
-              <select id="map-color" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs"></select>
-            </div>
-          </div>
-        </div>
 
-        <!-- Table Container -->
-        <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[580px]">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-slate-950/70 text-slate-400 uppercase tracking-wider font-sports text-[11px] sticky top-0 z-10 border-b border-slate-800">
-              <tr>
-                <th class="py-3 px-4 w-12 text-center">Status</th>
-                <th class="py-3 px-3 w-14">#</th>
-                <th class="py-3 px-4">Athlete / Item</th>
-                <th class="py-3 px-4">Team / Subtitle</th>
-                <th class="py-3 px-4">Key Stats</th>
-                <th class="py-3 px-4 text-right w-36">On-Air Action</th>
-              </tr>
-            </thead>
-            <tbody id="roster-table-body" class="divide-y divide-slate-800/60 font-sans">
-              <!-- Rendered dynamically -->
-            </tbody>
-          </table>
+          <!-- Table Container -->
+          <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[580px]">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-950/70 text-slate-400 uppercase tracking-wider font-sports text-[11px] sticky top-0 z-10 border-b border-slate-800">
+                <tr>
+                  <th class="py-3 px-4 w-12 text-center">Status</th>
+                  <th class="py-3 px-3 w-14">#</th>
+                  <th class="py-3 px-4">Athlete / Item</th>
+                  <th class="py-3 px-4">Team / Subtitle</th>
+                  <th class="py-3 px-4">Key Stats</th>
+                  <th class="py-3 px-4 text-right w-36">On-Air Action</th>
+                </tr>
+              </thead>
+              <tbody id="roster-table-body" class="divide-y divide-slate-800/60 font-sans">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
 
-          <!-- Empty state placeholder -->
-          <div id="empty-state" class="py-16 flex flex-col items-center justify-center text-center px-4">
-            <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-3 text-slate-600">
-              <i data-lucide="layers" class="w-8 h-8"></i>
+            <!-- Empty state placeholder -->
+            <div id="empty-state" class="py-16 flex flex-col items-center justify-center text-center px-4">
+              <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-3 text-slate-600">
+                <i data-lucide="layers" class="w-8 h-8"></i>
+              </div>
+              <p class="font-sports font-bold text-slate-300 text-base">No Data Loaded Yet</p>
+              <p class="text-xs text-slate-500 mt-1 max-w-sm">Paste a Google Sheet URL above, load a preset sports roster, or upload a CSV file to get started.</p>
             </div>
-            <p class="font-sports font-bold text-slate-300 text-base">No Data Loaded Yet</p>
-            <p class="text-xs text-slate-500 mt-1 max-w-sm">Paste a Google Sheet URL above, load a preset sports roster, or upload a CSV file to get started.</p>
           </div>
         </div>
       </section>
@@ -298,91 +313,100 @@
     <div class="lg:col-span-6 xl:col-span-1 desk-col flex flex-col gap-5">
 
       <!-- Live Broadcast Master Control Bar -->
-      <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-4">
+      <section id="master-control-card" class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-4">
           <div class="flex items-center gap-2">
             <span id="live-indicator-dot" class="w-3 h-3 rounded-full bg-slate-600"></span>
             <span id="live-indicator-text" class="font-sports font-extrabold text-sm tracking-widest text-slate-400 uppercase">OFF AIR</span>
           </div>
 
-          <!-- Master Clear Button -->
-          <button id="btn-master-clear" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/40 text-xs font-sports font-bold tracking-wider uppercase transition shadow-lg active:scale-95">
-            <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
-            <span>Clear On-Air</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Master Clear Button -->
+            <button id="btn-master-clear" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/40 text-xs font-sports font-bold tracking-wider uppercase transition shadow-lg active:scale-95">
+              <i data-lucide="square" class="w-3.5 h-3.5 fill-current"></i>
+              <span>Clear On-Air</span>
+            </button>
+
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="master-control-card" title="Collapse panel" aria-label="Toggle Master Control panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
+            </button>
+          </div>
         </div>
 
-        <!-- Template & Theme Customizers -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3 border-t border-slate-800">
-          <!-- Template Selector -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Graphic Template</label>
-            <select id="select-template" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
-              <option value="player_card" selected>🪪 Player Stat Card</option>
-              <option value="lottie_motion">💫 Lottie Motion Graphic (.json)</option>
-              <option value="custom_svg">🎨 Custom Vector SVG Template</option>
-              <option value="score_bug">⏱️ Match Score Bug / Banner</option>
-              <option value="breaking_alert">🚨 Breaking Match Alert</option>
-              <option value="commentator">🎙️ Commentator / Speaker</option>
-            </select>
-          </div>
+        <div class="panel-body">
+          <!-- Template & Theme Customizers -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-3 border-t border-slate-800">
+            <!-- Template Selector -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Graphic Template</label>
+              <select id="select-template" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
+                <option value="player_card" selected>🪪 Player Stat Card</option>
+                <option value="lottie_motion">💫 Lottie Motion Graphic (.json)</option>
+                <option value="custom_svg">🎨 Custom Vector SVG Template</option>
+                <option value="score_bug">⏱️ Match Score Bug / Banner</option>
+                <option value="breaking_alert">🚨 Breaking Match Alert</option>
+                <option value="commentator">🎙️ Commentator / Speaker</option>
+              </select>
+            </div>
 
-          <!-- Theme Selector -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Broadcast Theme</label>
-            <select id="select-theme" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
-              <option value="espn-red" selected>🔴 ESPN Crimson & Slate</option>
-              <option value="premier-league">🟣 Premier League (Purple/Neon)</option>
-              <option value="cyber-esports">🌐 Cyber Esports (Neon Cyan)</option>
-              <option value="champions-gold">🏆 Champions League (Navy/Gold)</option>
-              <option value="clean-dark">⚡ Modern Dark Slate</option>
-            </select>
-          </div>
+            <!-- Theme Selector -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Broadcast Theme</label>
+              <select id="select-theme" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
+                <option value="espn-red" selected>🔴 ESPN Crimson & Slate</option>
+                <option value="premier-league">🟣 Premier League (Purple/Neon)</option>
+                <option value="cyber-esports">🌐 Cyber Esports (Neon Cyan)</option>
+                <option value="champions-gold">🏆 Champions League (Navy/Gold)</option>
+                <option value="clean-dark">⚡ Modern Dark Slate</option>
+              </select>
+            </div>
 
-          <!-- Auto-Hide Duration -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">On-Air Duration</label>
-            <select id="select-duration" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
-              <option value="0" selected>Manual (Hold until Clear)</option>
-              <option value="5">Auto-hide after 5s</option>
-              <option value="8">Auto-hide after 8s</option>
-              <option value="12">Auto-hide after 12s</option>
-              <option value="15">Auto-hide after 15s</option>
-            </select>
-          </div>
+            <!-- Auto-Hide Duration -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">On-Air Duration</label>
+              <select id="select-duration" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none">
+                <option value="0" selected>Manual (Hold until Clear)</option>
+                <option value="5">Auto-hide after 5s</option>
+                <option value="8">Auto-hide after 8s</option>
+                <option value="12">Auto-hide after 12s</option>
+                <option value="15">Auto-hide after 15s</option>
+              </select>
+            </div>
 
-          <!-- League / Category Custom Label -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">League / Header Tag</label>
-            <input
-              type="text"
-              id="input-category-tag"
-              value="LIVE BROADCAST"
-              class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none uppercase font-sports font-semibold"
-            />
-          </div>
+            <!-- League / Category Custom Label -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">League / Header Tag</label>
+              <input
+                type="text"
+                id="input-category-tag"
+                value="LIVE BROADCAST"
+                class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-red-500/40 focus:border-red-500 outline-none uppercase font-sports font-semibold"
+              />
+            </div>
 
-          <!-- Auto-Detect Accent Color from Logo/Photo -->
-          <div class="sm:col-span-2 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
-            <label class="flex items-center gap-2 cursor-pointer select-none">
-              <input type="checkbox" id="auto-color-toggle" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
-              <span class="text-xs font-sports font-bold tracking-wider text-slate-300 uppercase flex items-center gap-1.5">
-                <i data-lucide="pipette" class="w-3.5 h-3.5 text-emerald-400"></i>
-                <span>Auto-Extract Accent Color from Logo / Photo</span>
-              </span>
-            </label>
-            <div id="extracted-color-preview" class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
-              <span class="text-[11px] text-slate-500 font-sans">Active Accent:</span>
-              <span id="extracted-color-swatch" class="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm inline-block" style="background-color: var(--primary);"></span>
-              <span id="extracted-color-hex" class="text-emerald-400 font-bold text-[11px]">Auto (#e10600)</span>
+            <!-- Auto-Detect Accent Color from Logo/Photo -->
+            <div class="sm:col-span-2 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="auto-color-toggle" checked class="w-4 h-4 rounded bg-slate-900 border-slate-700 text-emerald-500 focus:ring-0">
+                <span class="text-xs font-sports font-bold tracking-wider text-slate-300 uppercase flex items-center gap-1.5">
+                  <i data-lucide="pipette" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span>Auto-Extract Accent Color from Logo / Photo</span>
+                </span>
+              </label>
+              <div id="extracted-color-preview" class="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                <span class="text-[11px] text-slate-500 font-sans">Active Accent:</span>
+                <span id="extracted-color-swatch" class="w-3.5 h-3.5 rounded-full border border-white/20 shadow-sm inline-block" style="background-color: var(--primary);"></span>
+                <span id="extracted-color-hex" class="text-emerald-400 font-bold text-[11px]">Auto (#e10600)</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       <!-- Match Clock & Corner Timer Control Card (Bottom-Right Screen Overlay) -->
-      <section id="corner-timer-card" class="bg-[#121826] border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-5 shadow-xl transition-all">
-        <div class="flex items-center justify-between mb-3.5 flex-wrap gap-2">
+      <section id="corner-timer-card" class="bg-[#121826] border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-5 shadow-xl transition-all collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3.5 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
               <i data-lucide="clock" class="w-4 h-4"></i>
@@ -396,116 +420,123 @@
             </div>
           </div>
 
-          <!-- On-Air Toggle Button -->
+          <!-- On-Air Toggle Button & Collapse Button -->
           <div class="flex items-center gap-2">
             <button id="btn-toggle-timer-air" class="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-sports font-bold tracking-wider uppercase transition shadow-md active:scale-95">
               <span id="timer-air-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
               <span id="timer-air-btn-text">Show Clock On-Air</span>
             </button>
-          </div>
-        </div>
 
-        <!-- Big Live Digital Display Readout inside the control card -->
-        <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 mb-4 flex items-center justify-between flex-wrap gap-3">
-          <div class="flex items-center gap-3">
-            <div class="flex items-baseline gap-1 bg-slate-900 px-3.5 py-1.5 rounded-lg border border-slate-800">
-              <span id="desk-timer-display" class="font-sports font-black text-3xl text-emerald-400 tracking-wider tabular-nums font-mono">10:00</span>
-              <span id="desk-timer-mode-tag" class="text-[10px] text-slate-400 font-mono uppercase ml-1">DOWN</span>
-            </div>
-            <div class="flex flex-col">
-              <span id="desk-timer-label-preview" class="text-xs font-sports font-bold uppercase tracking-wider text-amber-400">1ST HALF</span>
-              <span id="desk-timer-state-text" class="text-[10px] text-slate-400 font-sans">Ready to start</span>
-            </div>
-          </div>
-
-          <!-- Play / Pause & Reset Action Buttons -->
-          <div class="flex items-center gap-2">
-            <button id="btn-timer-start-pause" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase tracking-wider transition shadow-lg active:scale-95">
-              <i data-lucide="play" id="icon-timer-start-pause" class="w-3.5 h-3.5 fill-current"></i>
-              <span id="text-timer-start-pause">Start</span>
-            </button>
-            <button id="btn-timer-reset" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-sports font-bold text-xs uppercase tracking-wider transition active:scale-95">
-              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-              <span>Reset</span>
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="corner-timer-card" title="Collapse panel" aria-label="Toggle Corner Match Clock panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
             </button>
           </div>
         </div>
 
-        <!-- Timer Setup Controls -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <!-- Duration Minutes Input -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Duration (Minutes : Sec)</label>
+        <div class="panel-body">
+          <!-- Big Live Digital Display Readout inside the control card -->
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 mb-4 flex items-center justify-between flex-wrap gap-3">
+            <div class="flex items-center gap-3">
+              <div class="flex items-baseline gap-1 bg-slate-900 px-3.5 py-1.5 rounded-lg border border-slate-800">
+                <span id="desk-timer-display" class="font-sports font-black text-3xl text-emerald-400 tracking-wider tabular-nums font-mono">10:00</span>
+                <span id="desk-timer-mode-tag" class="text-[10px] text-slate-400 font-mono uppercase ml-1">DOWN</span>
+              </div>
+              <div class="flex flex-col">
+                <span id="desk-timer-label-preview" class="text-xs font-sports font-bold uppercase tracking-wider text-amber-400">1ST HALF</span>
+                <span id="desk-timer-state-text" class="text-[10px] text-slate-400 font-sans">Ready to start</span>
+              </div>
+            </div>
+
+            <!-- Play / Pause & Reset Action Buttons -->
+            <div class="flex items-center gap-2">
+              <button id="btn-timer-start-pause" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase tracking-wider transition shadow-lg active:scale-95">
+                <i data-lucide="play" id="icon-timer-start-pause" class="w-3.5 h-3.5 fill-current"></i>
+                <span id="text-timer-start-pause">Start</span>
+              </button>
+              <button id="btn-timer-reset" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 font-sports font-bold text-xs uppercase tracking-wider transition active:scale-95">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Timer Setup Controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+            <!-- Duration Minutes Input -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Duration (Minutes : Sec)</label>
+              <div class="flex items-center gap-1">
+                <input
+                  type="number"
+                  id="timer-minutes-input"
+                  min="0"
+                  max="999"
+                  value="10"
+                  class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-mono font-bold text-center focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
+                />
+                <span class="text-xs text-slate-400 font-sports font-bold">:</span>
+                <input
+                  type="number"
+                  id="timer-seconds-input"
+                  min="0"
+                  max="59"
+                  value="0"
+                  class="w-16 bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-mono font-bold text-center focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Timer Mode (Count Down vs Count Up) -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Timer Mode</label>
+              <select id="timer-mode-select" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none">
+                <option value="down" selected>⏳ Count Down (10:00 → 0:00)</option>
+                <option value="up">⏱️ Count Up (0:00 → 10:00)</option>
+              </select>
+            </div>
+
+            <!-- Period / Header Label -->
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Period / Match Label</label>
+              <input
+                type="text"
+                id="timer-label-input"
+                value="1ST HALF"
+                placeholder="e.g. 1ST HALF, Q1, MATCH TIME"
+                class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs uppercase font-sports font-semibold focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Quick Minute Preset Chips & Live Corrections -->
+          <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <!-- Preset Chips -->
+            <div class="flex items-center gap-1 flex-wrap">
+              <span class="text-[10px] text-slate-500 mr-1 uppercase font-sports font-bold">Presets:</span>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="5">5m</button>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="10">10m</button>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="15">15m</button>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="20">20m</button>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="45">45m</button>
+              <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="90">90m</button>
+            </div>
+
+            <!-- Quick Live Corrections (+/- 1m, +/- 10s) -->
             <div class="flex items-center gap-1">
-              <input
-                type="number"
-                id="timer-minutes-input"
-                min="0"
-                max="999"
-                value="10"
-                class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-mono font-bold text-center focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
-              />
-              <span class="text-xs text-slate-400 font-sports font-bold">:</span>
-              <input
-                type="number"
-                id="timer-seconds-input"
-                min="0"
-                max="59"
-                value="0"
-                class="w-16 bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs font-mono font-bold text-center focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
-              />
+              <span class="text-[10px] text-slate-500 mr-1 uppercase font-sports font-bold">Live Nudge:</span>
+              <button id="btn-timer-sub-min" title="Subtract 1 minute" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">-1m</button>
+              <button id="btn-timer-add-min" title="Add 1 minute" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">+1m</button>
+              <button id="btn-timer-sub-10s" title="Subtract 10 seconds" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">-10s</button>
+              <button id="btn-timer-add-10s" title="Add 10 seconds" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">+10s</button>
             </div>
-          </div>
-
-          <!-- Timer Mode (Count Down vs Count Up) -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Timer Mode</label>
-            <select id="timer-mode-select" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none">
-              <option value="down" selected>⏳ Count Down (10:00 → 0:00)</option>
-              <option value="up">⏱️ Count Up (0:00 → 10:00)</option>
-            </select>
-          </div>
-
-          <!-- Period / Header Label -->
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1.5">Period / Match Label</label>
-            <input
-              type="text"
-              id="timer-label-input"
-              value="1ST HALF"
-              placeholder="e.g. 1ST HALF, Q1, MATCH TIME"
-              class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2.5 text-xs uppercase font-sports font-semibold focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 outline-none"
-            />
-          </div>
-        </div>
-
-        <!-- Quick Minute Preset Chips & Live Corrections -->
-        <div class="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <!-- Preset Chips -->
-          <div class="flex items-center gap-1 flex-wrap">
-            <span class="text-[10px] text-slate-500 mr-1 uppercase font-sports font-bold">Presets:</span>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="5">5m</button>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="10">10m</button>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="15">15m</button>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="20">20m</button>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="45">45m</button>
-            <button class="timer-preset-btn px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition" data-mins="90">90m</button>
-          </div>
-
-          <!-- Quick Live Corrections (+/- 1m, +/- 10s) -->
-          <div class="flex items-center gap-1">
-            <span class="text-[10px] text-slate-500 mr-1 uppercase font-sports font-bold">Live Nudge:</span>
-            <button id="btn-timer-sub-min" title="Subtract 1 minute" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">-1m</button>
-            <button id="btn-timer-add-min" title="Add 1 minute" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">+1m</button>
-            <button id="btn-timer-sub-10s" title="Subtract 10 seconds" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">-10s</button>
-            <button id="btn-timer-add-10s" title="Add 10 seconds" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[11px] transition">+10s</button>
           </div>
         </div>
       </section>
 
       <!-- Custom Vector SVG Studio & Layer Mapper Card -->
-      <section id="custom-svg-card" class="bg-[#121826] border border-amber-500/30 rounded-2xl p-5 shadow-xl transition-all">
-        <div class="flex items-center justify-between mb-3">
+      <section id="custom-svg-card" class="bg-[#121826] border border-amber-500/30 rounded-2xl p-5 shadow-xl transition-all collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
               <i data-lucide="layers" class="w-4 h-4"></i>
@@ -516,7 +547,7 @@
             </div>
           </div>
 
-          <!-- Actions -->
+          <!-- Actions & Collapse Button -->
           <div class="flex items-center gap-2">
             <a href="sample_templates/pro_sports_lower_third.svg" download="pro_sports_lower_third.svg" title="Download sample SVG to open and edit in Figma or Illustrator" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 text-xs font-medium border border-slate-700 transition">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -533,29 +564,36 @@
               <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
               <span>Reset Sample</span>
             </button>
+
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="custom-svg-card" title="Collapse panel" aria-label="Toggle Custom Vector SVG Studio panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
+            </button>
           </div>
         </div>
 
-        <!-- SVG Info & Status -->
-        <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs mb-3">
-          <div class="flex items-center gap-2 text-slate-300">
-            <span class="text-slate-500">Active SVG:</span>
-            <strong id="svg-filename-label" class="text-white font-mono">pro_sports_lower_third.svg</strong>
+        <div class="panel-body">
+          <!-- SVG Info & Status -->
+          <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs mb-3">
+            <div class="flex items-center gap-2 text-slate-300">
+              <span class="text-slate-500">Active SVG:</span>
+              <strong id="svg-filename-label" class="text-white font-mono">pro_sports_lower_third.svg</strong>
+            </div>
+            <span id="svg-layers-count" class="px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 font-mono text-[11px]">8 Named Layers Detected</span>
           </div>
-          <span id="svg-layers-count" class="px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 font-mono text-[11px]">8 Named Layers Detected</span>
-        </div>
 
-        <!-- Dynamic SVG Layer Mapping Table -->
-        <div class="max-h-56 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
-          <div class="grid grid-cols-1 gap-2" id="svg-mapping-container">
-            <!-- Dynamically populated layer mapping rows -->
+          <!-- Dynamic SVG Layer Mapping Table -->
+          <div class="max-h-56 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
+            <div class="grid grid-cols-1 gap-2" id="svg-mapping-container">
+              <!-- Dynamically populated layer mapping rows -->
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Lottie Motion Graphics Studio & Layer Mapper Card -->
-      <section id="lottie-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all">
-        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <section id="lottie-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
               <i data-lucide="sparkles" class="w-4 h-4"></i>
@@ -566,7 +604,7 @@
             </div>
           </div>
 
-          <!-- Actions -->
+          <!-- Actions & Collapse Button -->
           <div class="flex items-center gap-2">
             <button id="btn-download-lottie" title="Download current Lottie JSON animation" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 text-xs font-medium border border-slate-700 transition">
               <i data-lucide="download" class="w-3.5 h-3.5"></i>
@@ -578,105 +616,112 @@
               <span>Upload .JSON</span>
               <input type="file" id="lottie-file-input" accept=".json,application/json" class="hidden">
             </label>
+
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="lottie-card" title="Collapse panel" aria-label="Toggle Lottie Motion Studio panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
+            </button>
           </div>
         </div>
 
-        <!-- Preset Selector & Mode Selector -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Motion Preset</label>
-            <select id="select-lottie-preset" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
-              <option value="sports_lower_third_with_photo" selected>⚡ Sports Broadcast (With Logo / Photo PNG)</option>
-              <option value="velocity_crimson">🔴 Velocity Crimson (Kinetic Slat)</option>
-              <option value="cyber_neon">🌐 Cyber Neon (Esports HUD)</option>
-              <option value="champions_gold">🏆 Champions Gold (Chevron Ribbon)</option>
-              <option value="custom" disabled id="option-custom-lottie">📁 Custom Uploaded (.json)</option>
-            </select>
-          </div>
+        <div class="panel-body">
+          <!-- Preset Selector & Mode Selector -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Motion Preset</label>
+              <select id="select-lottie-preset" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
+                <option value="sports_lower_third_with_photo" selected>⚡ Sports Broadcast (With Logo / Photo PNG)</option>
+                <option value="velocity_crimson">🔴 Velocity Crimson (Kinetic Slat)</option>
+                <option value="cyber_neon">🌐 Cyber Neon (Esports HUD)</option>
+                <option value="champions_gold">🏆 Champions Gold (Chevron Ribbon)</option>
+                <option value="custom" disabled id="option-custom-lottie">📁 Custom Uploaded (.json)</option>
+              </select>
+            </div>
 
-          <div>
-            <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Animation Mode</label>
-            <select id="select-lottie-mode" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
-              <option value="in_animation" selected>🔄 In-Animation Text Binding (Directly on Custom Graphic - Recommended)</option>
-              <option value="overlay">✨ Motion Base + HTML Overlay (For Background Loops Without Text)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Lottie Info & Playback Settings -->
-        <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs mb-3 flex-wrap gap-2">
-          <div class="flex items-center gap-2 text-slate-300">
-            <span class="text-slate-500">Active Animation:</span>
-            <strong id="lottie-filename-label" class="text-cyan-400 font-mono text-[11px]">velocity_crimson.json</strong>
-          </div>
-
-          <div class="flex items-center gap-3">
-            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 text-xs">
-              <input type="checkbox" id="lottie-loop-toggle" checked class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-cyan-500">
-              <span>Loop</span>
-            </label>
-
-            <div class="flex items-center gap-1 text-slate-400">
-              <span class="text-[11px]">Speed:</span>
-              <select id="select-lottie-speed" class="bg-slate-900 border border-slate-700 text-white rounded px-1.5 py-0.5 text-[11px]">
-                <option value="0.75">0.75x</option>
-                <option value="1.0" selected>1.0x</option>
-                <option value="1.25">1.25x</option>
-                <option value="1.5">1.5x</option>
+            <div>
+              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Animation Mode</label>
+              <select id="select-lottie-mode" class="w-full bg-slate-900 border border-slate-700 text-white rounded-xl p-2 text-xs focus:ring-2 focus:ring-cyan-500/40 outline-none">
+                <option value="in_animation" selected>🔄 In-Animation Text Binding (Directly on Custom Graphic - Recommended)</option>
+                <option value="overlay">✨ Motion Base + HTML Overlay (For Background Loops Without Text)</option>
               </select>
             </div>
           </div>
-        </div>
 
-        <!-- Dynamic Photo / Logo Sizing & Framing Controls -->
-        <div id="lottie-photo-controls" class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs mb-3">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i>
-              <span>Dynamic Image Size & Framing</span>
-            </span>
-            <span id="lottie-photo-scale-badge" class="text-[10px] font-mono text-cyan-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">100%</span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <!-- Framing Mode -->
-            <div>
-              <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Framing / Fit</label>
-              <select id="lottie-photo-fit-select" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-amber-400 outline-none">
-                <option value="contain" selected>🔍 Fit / Contain (Full Logo, No Crop)</option>
-                <option value="cover">📐 Fill / Cover (Fill Badge Frame)</option>
-              </select>
-              <p class="text-[10px] text-slate-500 mt-1">Use 'Fit' for logos like PNG crests, 'Fill' for portraits</p>
+          <!-- Lottie Info & Playback Settings -->
+          <div class="flex items-center justify-between bg-slate-950/70 border border-slate-800 rounded-xl px-3 py-2 text-xs mb-3 flex-wrap gap-2">
+            <div class="flex items-center gap-2 text-slate-300">
+              <span class="text-slate-500">Active Animation:</span>
+              <strong id="lottie-filename-label" class="text-cyan-400 font-mono text-[11px]">velocity_crimson.json</strong>
             </div>
 
-            <!-- Scale Slider & Quick Buttons -->
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <label class="text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider">Scale (50% - 200%)</label>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 cursor-pointer text-slate-300 text-xs">
+                <input type="checkbox" id="lottie-loop-toggle" checked class="w-3.5 h-3.5 rounded bg-slate-900 border-slate-700 text-cyan-500">
+                <span>Loop</span>
+              </label>
+
+              <div class="flex items-center gap-1 text-slate-400">
+                <span class="text-[11px]">Speed:</span>
+                <select id="select-lottie-speed" class="bg-slate-900 border border-slate-700 text-white rounded px-1.5 py-0.5 text-[11px]">
+                  <option value="0.75">0.75x</option>
+                  <option value="1.0" selected>1.0x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Photo / Logo Sizing & Framing Controls -->
+          <div id="lottie-photo-controls" class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 text-xs mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <i data-lucide="image" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Dynamic Image Size & Framing</span>
+              </span>
+              <span id="lottie-photo-scale-badge" class="text-[10px] font-mono text-cyan-400 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800">100%</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <!-- Framing Mode -->
+              <div>
+                <label class="block text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider mb-1">Framing / Fit</label>
+                <select id="lottie-photo-fit-select" class="w-full bg-slate-900 border border-slate-700 text-white rounded-lg p-1.5 text-xs focus:ring-1 focus:ring-amber-400 outline-none">
+                  <option value="contain" selected>🔍 Fit / Contain (Full Logo, No Crop)</option>
+                  <option value="cover">📐 Fill / Cover (Fill Badge Frame)</option>
+                </select>
+                <p class="text-[10px] text-slate-500 mt-1">Use 'Fit' for logos like PNG crests, 'Fill' for portraits</p>
+              </div>
+
+              <!-- Scale Slider & Quick Buttons -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-slate-400 text-[10px] font-sports font-bold uppercase tracking-wider">Scale (50% - 200%)</label>
+                  <div class="flex items-center gap-1">
+                    <input type="number" id="lottie-photo-scale-input" min="50" max="200" step="5" value="100" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-amber-400 outline-none">
+                    <span class="text-[11px] text-slate-500">%</span>
+                  </div>
+                </div>
+                <input type="range" id="lottie-photo-scale-slider" min="50" max="200" step="1" value="100" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-1.5">
                 <div class="flex items-center gap-1">
-                  <input type="number" id="lottie-photo-scale-input" min="50" max="200" step="5" value="100" class="w-14 text-center font-mono text-xs font-bold text-cyan-300 bg-slate-900 py-0.5 rounded border border-slate-800 focus:border-amber-400 outline-none">
-                  <span class="text-[11px] text-slate-500">%</span>
+                  <button id="btn-photo-scale-down" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale down 10%">-10%</button>
+                  <button id="btn-photo-scale-reset" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-amber-400/20 border border-slate-800 text-[10px] font-mono text-amber-400 font-bold transition active:scale-95" title="Reset to 100%">100%</button>
+                  <button id="btn-photo-scale-up" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale up 10%">+10%</button>
                 </div>
               </div>
-              <input type="range" id="lottie-photo-scale-slider" min="50" max="200" step="1" value="100" class="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer my-1.5">
-              <div class="flex items-center gap-1">
-                <button id="btn-photo-scale-down" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale down 10%">-10%</button>
-                <button id="btn-photo-scale-reset" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-amber-400/20 border border-slate-800 text-[10px] font-mono text-amber-400 font-bold transition active:scale-95" title="Reset to 100%">100%</button>
-                <button id="btn-photo-scale-up" type="button" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] font-mono text-slate-300 flex-1 transition active:scale-95" title="Scale up 10%">+10%</button>
-              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Dynamic Lottie Layer Mapping Container (revealed when text layers are detected) -->
-        <div id="lottie-mapping-section" class="hidden">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-slate-400">Detected In-Animation Text Layers</span>
-            <span id="lottie-layers-count" class="text-[10px] font-mono text-cyan-400">0 Layers</span>
-          </div>
-          <div class="max-h-40 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
-            <div class="grid grid-cols-1 gap-2" id="lottie-mapping-container">
-              <!-- Dynamically populated layer mapping rows -->
+          <!-- Dynamic Lottie Layer Mapping Container (revealed when text layers are detected) -->
+          <div id="lottie-mapping-section" class="hidden">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[10px] font-sports font-bold uppercase tracking-wider text-slate-400">Detected In-Animation Text Layers</span>
+              <span id="lottie-layers-count" class="text-[10px] font-mono text-cyan-400">0 Layers</span>
+            </div>
+            <div class="max-h-40 overflow-y-auto border border-slate-800/80 rounded-xl bg-slate-950/50 p-2">
+              <div class="grid grid-cols-1 gap-2" id="lottie-mapping-container">
+                <!-- Dynamically populated layer mapping rows -->
+              </div>
             </div>
           </div>
         </div>
@@ -688,8 +733,8 @@
     <div class="lg:col-span-6 xl:col-span-1 desk-col flex flex-col gap-5 xl:sticky xl:top-[76px] self-start">
 
       <!-- Simulated On-Air Live Preview Canvas -->
-      <section class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
-        <div class="flex items-center justify-between mb-3">
+      <section id="preview-monitor-card" class="bg-[#121826] border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-500">
               <i data-lucide="monitor" class="w-4 h-4"></i>
@@ -699,51 +744,59 @@
               <p class="text-[11px] text-slate-400">Confidence Program Monitor</p>
             </div>
           </div>
-          <span class="text-[11px] text-slate-400 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-800">16:9 HD</span>
-        </div>
-
-        <!-- Simulated Broadcast Screen Container -->
-        <div class="relative w-full aspect-video rounded-xl bg-slate-950 border border-slate-800/90 overflow-hidden shadow-2xl flex flex-col justify-end p-3 bg-cover bg-center" style="background-image: radial-gradient(circle at center, #1a2234 0%, #090d14 100%);">
-          <!-- Background TV guide watermark -->
-          <div class="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none opacity-60">
-            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-            <span class="text-[10px] font-sports font-bold uppercase tracking-widest text-slate-400">PROGRAM FEED</span>
-          </div>
-
-          <!-- Mini Lower Third Render Area -->
-          <div id="preview-render-area" class="w-full transition-all duration-300">
-            <!-- Simulated Lower Third injected here -->
-          </div>
-
-          <!-- Mini Corner Timer Preview (Bottom-Right) -->
-          <div id="preview-corner-timer" class="absolute bottom-2.5 right-2.5 hidden pointer-events-none transition-all duration-200 origin-bottom-right transform scale-75">
-            <!-- Simulated mini corner timer injected here -->
-          </div>
-        </div>
-
-        <!-- Quick Manual Push -->
-        <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-sports font-bold uppercase tracking-wider text-slate-400">Quick Manual Push</span>
-            <span class="text-[10px] text-slate-500 font-sans">Direct overlay feed</span>
-          </div>
-          <div class="flex flex-col gap-2">
-            <div class="grid grid-cols-2 gap-2">
-              <input type="text" id="manual-name" placeholder="Title / Athlete Name" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
-              <input type="text" id="manual-team" placeholder="Team / Subtitle" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
-            </div>
-            <input type="text" id="manual-photo" placeholder="Photo / Logo Path (e.g. C:\... or images/...)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
-            <button id="btn-manual-push" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase rounded-lg py-2 transition shadow-md active:scale-95">
-              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-              <span>Take Now (Manual Push)</span>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] text-slate-400 font-mono bg-slate-900 px-2 py-0.5 rounded border border-slate-800">16:9 HD</span>
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="preview-monitor-card" title="Collapse panel" aria-label="Toggle Live Preview panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
             </button>
+          </div>
+        </div>
+
+        <div class="panel-body flex flex-col">
+          <!-- Simulated Broadcast Screen Container -->
+          <div class="relative w-full aspect-video rounded-xl bg-slate-950 border border-slate-800/90 overflow-hidden shadow-2xl flex flex-col justify-end p-3 bg-cover bg-center" style="background-image: radial-gradient(circle at center, #1a2234 0%, #090d14 100%);">
+            <!-- Background TV guide watermark -->
+            <div class="absolute top-3 left-3 flex items-center gap-1.5 pointer-events-none opacity-60">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span class="text-[10px] font-sports font-bold uppercase tracking-widest text-slate-400">PROGRAM FEED</span>
+            </div>
+
+            <!-- Mini Lower Third Render Area -->
+            <div id="preview-render-area" class="w-full transition-all duration-300">
+              <!-- Simulated Lower Third injected here -->
+            </div>
+
+            <!-- Mini Corner Timer Preview (Bottom-Right) -->
+            <div id="preview-corner-timer" class="absolute bottom-2.5 right-2.5 hidden pointer-events-none transition-all duration-200 origin-bottom-right transform scale-75">
+              <!-- Simulated mini corner timer injected here -->
+            </div>
+          </div>
+
+          <!-- Quick Manual Push -->
+          <div class="mt-4 pt-4 border-t border-slate-800/80 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-sports font-bold uppercase tracking-wider text-slate-400">Quick Manual Push</span>
+              <span class="text-[10px] text-slate-500 font-sans">Direct overlay feed</span>
+            </div>
+            <div class="flex flex-col gap-2">
+              <div class="grid grid-cols-2 gap-2">
+                <input type="text" id="manual-name" placeholder="Title / Athlete Name" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+                <input type="text" id="manual-team" placeholder="Team / Subtitle" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+              </div>
+              <input type="text" id="manual-photo" placeholder="Photo / Logo Path (e.g. C:\... or images/...)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-red-500">
+              <button id="btn-manual-push" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase rounded-lg py-2 transition shadow-md active:scale-95">
+                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+                <span>Take Now (Manual Push)</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Element Position & Alignment (X, Y) Inspector Panel (Under Preview) -->
-      <section id="element-position-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all">
-        <div class="flex items-center justify-between mb-3">
+      <section id="element-position-card" class="bg-[#121826] border border-cyan-500/30 rounded-2xl p-5 shadow-xl transition-all collapsible-panel">
+        <div class="panel-header flex items-center justify-between mb-3 flex-wrap gap-2">
           <div class="flex items-center gap-2">
             <div class="w-7 h-7 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
               <i data-lucide="move" class="w-4 h-4"></i>
@@ -753,11 +806,19 @@
               <p class="text-[11px] text-slate-400">Position the entire lower third or fine-tune individual graphic layers in real-time</p>
             </div>
           </div>
-          <button id="btn-reset-all-positions" title="Reset all element position offsets" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs border border-slate-700 transition">
-            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-            <span>Reset All</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button id="btn-reset-all-positions" title="Reset all element position offsets" class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs border border-slate-700 transition">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset All</span>
+            </button>
+            <!-- Collapse Button -->
+            <button type="button" class="panel-collapse-btn p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer" data-target="element-position-card" title="Collapse panel" aria-label="Toggle Position & Alignment panel" aria-expanded="true">
+              <i data-lucide="chevron-up" class="panel-collapse-icon w-4 h-4 transition-transform duration-200"></i>
+            </button>
+          </div>
         </div>
+
+        <div class="panel-body">
 
         <!-- Element Dropdown Selector & Highlight Toggle -->
         <div class="flex flex-col gap-2.5 mb-3">
@@ -877,6 +938,7 @@
               <div></div>
             </div>
           </div>
+        </div>
         </div>
       </section>
 

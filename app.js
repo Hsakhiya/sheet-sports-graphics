@@ -3539,4 +3539,67 @@ function initCornerTimerModule() {
 
 initCornerTimerModule();
 
+// Collapsible Panels Module
+function initCollapsiblePanels() {
+  const STORAGE_KEY = 'desk_collapsed_panels';
+
+  let collapsedPanelIds = new Set();
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        collapsedPanelIds = new Set(parsed);
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to parse desk_collapsed_panels from localStorage', err);
+  }
+
+  function setPanelCollapsed(panelEl, btnEl, isCollapsed) {
+    if (!panelEl) return;
+    if (isCollapsed) {
+      panelEl.classList.add('collapsed');
+      if (btnEl) {
+        btnEl.setAttribute('aria-expanded', 'false');
+        btnEl.setAttribute('title', 'Expand panel');
+      }
+      if (panelEl.id) collapsedPanelIds.add(panelEl.id);
+    } else {
+      panelEl.classList.remove('collapsed');
+      if (btnEl) {
+        btnEl.setAttribute('aria-expanded', 'true');
+        btnEl.setAttribute('title', 'Collapse panel');
+      }
+      if (panelEl.id) collapsedPanelIds.delete(panelEl.id);
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(collapsedPanelIds)));
+    } catch (e) {
+      // ignore localStorage quota errors
+    }
+  }
+
+  document.querySelectorAll('.panel-collapse-btn').forEach((btn) => {
+    const targetId = btn.dataset.target;
+    const panel = targetId ? document.getElementById(targetId) : btn.closest('.collapsible-panel');
+
+    // Restore saved state
+    if (panel && panel.id && collapsedPanelIds.has(panel.id)) {
+      setPanelCollapsed(panel, btn, true);
+    }
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const currentPanel = targetId ? document.getElementById(targetId) : btn.closest('.collapsible-panel');
+      if (!currentPanel) return;
+      const willCollapse = !currentPanel.classList.contains('collapsed');
+      setPanelCollapsed(currentPanel, btn, willCollapse);
+    });
+  });
+}
+
+initCollapsiblePanels();
+
 
