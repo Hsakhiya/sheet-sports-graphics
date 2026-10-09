@@ -472,6 +472,9 @@ channel.onmessage = (event) => {
   if (action === 'PONG') {
     lastPongTime = Date.now();
     markDisplayConnected(true);
+    if (typeof sendCornerTimerSync === 'function') {
+      sendCornerTimerSync();
+    }
   }
 };
 
@@ -498,6 +501,9 @@ function initDeskNetworkSync() {
         if (data.action === 'PONG') {
           lastPongTime = Date.now();
           markDisplayConnected(true);
+          if (typeof sendCornerTimerSync === 'function') {
+            sendCornerTimerSync();
+          }
         } else if (data.action === 'DEVICE_COUNT') {
           const count = data.payload?.count || 0;
           if (count > 0 && !isDisplayConnected) {
@@ -567,6 +573,9 @@ btnOpenDisplay.addEventListener('click', () => {
   if (displayWindowRef) {
     displayWindowRef.focus();
     markDisplayConnected(true);
+    setTimeout(() => {
+      if (typeof sendCornerTimerSync === 'function') sendCornerTimerSync();
+    }, 600);
   }
 });
 
@@ -3192,4 +3201,342 @@ document.querySelectorAll('.btn-copy-input').forEach(btn => {
     });
   });
 });
+
+// =============================================================
+// Broadcast Corner Match Clock / Timer Module (Bottom-Right)
+// =============================================================
+
+// DOM Elements
+const btnToggleTimerAir = document.getElementById('btn-toggle-timer-air');
+const timerAirDot = document.getElementById('timer-air-dot');
+const timerAirBtnText = document.getElementById('timer-air-btn-text');
+const deskTimerStatusChip = document.getElementById('desk-timer-status-chip');
+const deskTimerDisplay = document.getElementById('desk-timer-display');
+const deskTimerModeTag = document.getElementById('desk-timer-mode-tag');
+const deskTimerLabelPreview = document.getElementById('desk-timer-label-preview');
+const deskTimerStateText = document.getElementById('desk-timer-state-text');
+const btnTimerStartPause = document.getElementById('btn-timer-start-pause');
+const textTimerStartPause = document.getElementById('text-timer-start-pause');
+const btnTimerReset = document.getElementById('btn-timer-reset');
+const timerMinutesInput = document.getElementById('timer-minutes-input');
+const timerSecondsInput = document.getElementById('timer-seconds-input');
+const timerModeSelect = document.getElementById('timer-mode-select');
+const timerLabelInput = document.getElementById('timer-label-input');
+const btnTimerSubMin = document.getElementById('btn-timer-sub-min');
+const btnTimerAddMin = document.getElementById('btn-timer-add-min');
+const btnTimerSub10s = document.getElementById('btn-timer-sub-10s');
+const btnTimerAdd10s = document.getElementById('btn-timer-add-10s');
+
+// Internal Timer State
+const cornerTimerState = {
+  enabled: false,
+  running: false,
+  mode: 'down',
+  initialMinutes: 10,
+  initialSeconds: 0,
+  currentSeconds: 600,
+  label: '1ST HALF',
+  lastUpdateTimestamp: Date.now()
+};
+
+// Try loading persisted timer state from localStorage
+try {
+  const savedTimer = localStorage.getItem('sports_corner_timer_state');
+  if (savedTimer) {
+    const parsed = JSON.parse(savedTimer);
+    if (parsed && typeof parsed.currentSeconds === 'number') {
+      cornerTimerState.enabled = Boolean(parsed.enabled);
+      cornerTimerState.mode = parsed.mode || 'down';
+      cornerTimerState.initialMinutes = Number(parsed.initialMinutes) >= 0 ? Number(parsed.initialMinutes) : 10;
+      cornerTimerState.initialSeconds = Number(parsed.initialSeconds) >= 0 ? Number(parsed.initialSeconds) : 0;
+      cornerTimerState.currentSeconds = Number(parsed.currentSeconds) >= 0 ? Number(parsed.currentSeconds) : 600;
+      cornerTimerState.label = parsed.label || '1ST HALF';
+      cornerTimerState.running = false;
+    }
+  }
+} catch (e) {}
+
+function formatCornerTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (hrs > 0) {
+    return `${hrs}:${pad(mins)}:${pad(secs)}`;
+  }
+  return `${pad(mins)}:${pad(secs)}`;
+}
+
+function updateDeskTimerUI() {
+  const timeStr = formatCornerTime(cornerTimerState.currentSeconds);
+  const isDown = cornerTimerState.mode === 'down';
+  const isTimeZero = isDown && cornerTimerState.currentSeconds <= 0;
+  const isRunning = cornerTimerState.running;
+  const isEnabled = cornerTimerState.enabled;
+
+  if (deskTimerDisplay) {
+    deskTimerDisplay.textContent = timeStr;
+    if (isTimeZero) {
+      deskTimerDisplay.className = 'font-sports font-black text-3xl text-red-500 tracking-wider tabular-nums font-mono animate-pulse';
+    } else if (isDown && cornerTimerState.currentSeconds <= 60 && cornerTimerState.currentSeconds > 0) {
+      deskTimerDisplay.className = 'font-sports font-black text-3xl text-amber-400 tracking-wider tabular-nums font-mono';
+    } else {
+      deskTimerDisplay.className = 'font-sports font-black text-3xl text-emerald-400 tracking-wider tabular-nums font-mono';
+    }
+  }
+
+  if (deskTimerModeTag) {
+    deskTimerModeTag.textContent = cornerTimerState.mode.toUpperCase();
+  }
+
+  if (deskTimerLabelPreview) {
+    deskTimerLabelPreview.textContent = cornerTimerState.label;
+  }
+
+  if (deskTimerStateText) {
+    if (isRunning) {
+      deskTimerStateText.textContent = 'Running live on-air';
+      deskTimerStateText.className = 'text-[10px] text-emerald-400 font-sans font-semibold';
+    } else if (isTimeZero) {
+      deskTimerStateText.textContent = 'Time expired / Match finished';
+      deskTimerStateText.className = 'text-[10px] text-red-400 font-sans font-semibold';
+    } else {
+      deskTimerStateText.textContent = 'Timer paused';
+      deskTimerStateText.className = 'text-[10px] text-slate-400 font-sans';
+    }
+  }
+
+  // On-Air Toggle Button Styling
+  if (btnToggleTimerAir && timerAirDot && timerAirBtnText && deskTimerStatusChip) {
+    if (isEnabled) {
+      btnToggleTimerAir.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/50 text-xs font-sports font-bold tracking-wider uppercase transition shadow-lg shadow-emerald-500/10 active:scale-95';
+      timerAirDot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+      timerAirBtnText.textContent = 'ON AIR (Hide Clock)';
+      deskTimerStatusChip.className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 font-mono font-bold';
+      deskTimerStatusChip.textContent = 'ON AIR';
+    } else {
+      btnToggleTimerAir.className = 'flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-sports font-bold tracking-wider uppercase transition shadow-md active:scale-95';
+      timerAirDot.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+      timerAirBtnText.textContent = 'Show Clock On-Air';
+      deskTimerStatusChip.className = 'text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono font-normal';
+      deskTimerStatusChip.textContent = 'OFF AIR';
+    }
+  }
+
+  // Play / Pause Button Styling
+  if (btnTimerStartPause && textTimerStartPause) {
+    if (isRunning) {
+      btnTimerStartPause.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-sports font-bold text-xs uppercase tracking-wider transition shadow-lg active:scale-95';
+      textTimerStartPause.innerHTML = `<i data-lucide="pause" class="w-3.5 h-3.5 fill-current inline-block mr-1"></i>Pause`;
+    } else {
+      btnTimerStartPause.className = 'flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-sports font-bold text-xs uppercase tracking-wider transition shadow-lg active:scale-95';
+      textTimerStartPause.innerHTML = `<i data-lucide="play" class="w-3.5 h-3.5 fill-current inline-block mr-1"></i>Start`;
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function updatePreviewCornerTimer() {
+  const previewTimer = document.getElementById('preview-corner-timer');
+  if (!previewTimer) return;
+
+  if (!cornerTimerState.enabled) {
+    previewTimer.classList.add('hidden');
+    previewTimer.innerHTML = '';
+    return;
+  }
+
+  previewTimer.classList.remove('hidden');
+  const isRunning = cornerTimerState.running;
+  const timeStr = formatCornerTime(cornerTimerState.currentSeconds);
+  const label = cornerTimerState.label || 'MATCH TIME';
+  const isDown = cornerTimerState.mode === 'down';
+  const isTimeZero = isDown && (cornerTimerState.currentSeconds <= 0);
+
+  previewTimer.innerHTML = `
+    <div class="flex items-center bg-slate-950/95 border ${isTimeZero ? 'border-red-500/80 shadow-red-500/30' : 'border-slate-700/80'} rounded-xl px-3 py-1.5 shadow-2xl backdrop-blur-md">
+      <div class="w-1 self-stretch rounded-full bg-[var(--primary,#e10600)] mr-2 shadow-[0_0_8px_var(--primary,#e10600)]"></div>
+      <div class="flex flex-col mr-2.5 pr-2.5 border-r border-slate-700/80">
+        <span class="text-[8px] font-sports font-black ${isRunning ? 'text-emerald-400 timer-pulse-dot' : isTimeZero ? 'text-red-400' : 'text-slate-400'} uppercase">${isRunning ? 'LIVE' : isTimeZero ? 'TIME' : 'PAUSED'}</span>
+        <span class="text-[10px] font-sports font-black text-amber-400 truncate max-w-[75px] uppercase">${label}</span>
+      </div>
+      <span class="font-sports font-black text-2xl ${isTimeZero ? 'text-red-500 animate-pulse' : 'text-white'} font-mono tabular-nums leading-none drop-shadow-md">${timeStr}</span>
+    </div>
+  `;
+}
+
+function broadcastCornerTimerState() {
+  cornerTimerState.lastUpdateTimestamp = Date.now();
+
+  try {
+    localStorage.setItem('sports_corner_timer_state', JSON.stringify(cornerTimerState));
+  } catch (e) {}
+
+  updateDeskTimerUI();
+  updatePreviewCornerTimer();
+
+  let activeAccent = '#e10600';
+  const swatch = document.getElementById('extracted-color-swatch');
+  if (swatch && swatch.style.backgroundColor) {
+    activeAccent = swatch.style.backgroundColor;
+  }
+
+  sendToDisplay('UPDATE_CORNER_TIMER', {
+    ...cornerTimerState,
+    accentColor: activeAccent
+  });
+}
+
+function sendCornerTimerSync() {
+  broadcastCornerTimerState();
+}
+window.sendCornerTimerSync = sendCornerTimerSync;
+
+let deskTimerInterval = null;
+
+function ensureDeskTimerTicker() {
+  if (deskTimerInterval) return;
+  deskTimerInterval = setInterval(() => {
+    if (!cornerTimerState.running) return;
+
+    if (cornerTimerState.mode === 'down') {
+      cornerTimerState.currentSeconds = Math.max(0, cornerTimerState.currentSeconds - 1);
+      if (cornerTimerState.currentSeconds === 0) {
+        cornerTimerState.running = false;
+        broadcastCornerTimerState();
+        return;
+      }
+    } else {
+      cornerTimerState.currentSeconds += 1;
+    }
+
+    updateDeskTimerUI();
+    updatePreviewCornerTimer();
+  }, 1000);
+}
+
+// Event Listeners setup
+function initCornerTimerModule() {
+  // Populate initial inputs
+  if (timerMinutesInput) timerMinutesInput.value = cornerTimerState.initialMinutes;
+  if (timerSecondsInput) timerSecondsInput.value = cornerTimerState.initialSeconds;
+  if (timerModeSelect) timerModeSelect.value = cornerTimerState.mode;
+  if (timerLabelInput) timerLabelInput.value = cornerTimerState.label;
+
+  // Toggle On-Air
+  btnToggleTimerAir?.addEventListener('click', () => {
+    cornerTimerState.enabled = !cornerTimerState.enabled;
+    broadcastCornerTimerState();
+  });
+
+  // Start / Pause
+  btnTimerStartPause?.addEventListener('click', () => {
+    cornerTimerState.running = !cornerTimerState.running;
+    if (cornerTimerState.running) {
+      ensureDeskTimerTicker();
+    }
+    broadcastCornerTimerState();
+  });
+
+  // Reset
+  btnTimerReset?.addEventListener('click', () => {
+    cornerTimerState.running = false;
+    const mins = Math.max(0, parseInt(timerMinutesInput?.value || '0', 10));
+    const secs = Math.max(0, parseInt(timerSecondsInput?.value || '0', 10));
+    cornerTimerState.initialMinutes = mins;
+    cornerTimerState.initialSeconds = secs;
+
+    if (cornerTimerState.mode === 'down') {
+      cornerTimerState.currentSeconds = (mins * 60) + secs;
+    } else {
+      cornerTimerState.currentSeconds = 0;
+    }
+    broadcastCornerTimerState();
+  });
+
+  // Minutes / Seconds input change
+  const handleDurationChange = () => {
+    const mins = Math.max(0, parseInt(timerMinutesInput?.value || '0', 10));
+    const secs = Math.max(0, parseInt(timerSecondsInput?.value || '0', 10));
+    cornerTimerState.initialMinutes = mins;
+    cornerTimerState.initialSeconds = secs;
+
+    if (!cornerTimerState.running) {
+      if (cornerTimerState.mode === 'down') {
+        cornerTimerState.currentSeconds = (mins * 60) + secs;
+      }
+    }
+    broadcastCornerTimerState();
+  };
+  timerMinutesInput?.addEventListener('input', handleDurationChange);
+  timerSecondsInput?.addEventListener('input', handleDurationChange);
+
+  // Mode change
+  timerModeSelect?.addEventListener('change', (e) => {
+    cornerTimerState.mode = e.target.value;
+    if (deskTimerModeTag) deskTimerModeTag.textContent = cornerTimerState.mode.toUpperCase();
+    if (!cornerTimerState.running) {
+      const mins = Math.max(0, parseInt(timerMinutesInput?.value || '0', 10));
+      const secs = Math.max(0, parseInt(timerSecondsInput?.value || '0', 10));
+      if (cornerTimerState.mode === 'down') {
+        cornerTimerState.currentSeconds = (mins * 60) + secs;
+      } else {
+        cornerTimerState.currentSeconds = 0;
+      }
+    }
+    broadcastCornerTimerState();
+  });
+
+  // Label change
+  timerLabelInput?.addEventListener('input', (e) => {
+    cornerTimerState.label = (e.target.value || 'MATCH TIME').toUpperCase();
+    if (deskTimerLabelPreview) deskTimerLabelPreview.textContent = cornerTimerState.label;
+    broadcastCornerTimerState();
+  });
+
+  // Preset chips
+  document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mins = parseInt(btn.dataset.mins, 10);
+      if (isNaN(mins)) return;
+      if (timerMinutesInput) timerMinutesInput.value = mins;
+      if (timerSecondsInput) timerSecondsInput.value = 0;
+      cornerTimerState.initialMinutes = mins;
+      cornerTimerState.initialSeconds = 0;
+      cornerTimerState.running = false;
+      if (cornerTimerState.mode === 'down') {
+        cornerTimerState.currentSeconds = mins * 60;
+      } else {
+        cornerTimerState.currentSeconds = 0;
+      }
+      broadcastCornerTimerState();
+    });
+  });
+
+  // Quick Nudge Buttons
+  btnTimerSubMin?.addEventListener('click', () => {
+    cornerTimerState.currentSeconds = Math.max(0, cornerTimerState.currentSeconds - 60);
+    broadcastCornerTimerState();
+  });
+  btnTimerAddMin?.addEventListener('click', () => {
+    cornerTimerState.currentSeconds = cornerTimerState.currentSeconds + 60;
+    broadcastCornerTimerState();
+  });
+  btnTimerSub10s?.addEventListener('click', () => {
+    cornerTimerState.currentSeconds = Math.max(0, cornerTimerState.currentSeconds - 10);
+    broadcastCornerTimerState();
+  });
+  btnTimerAdd10s?.addEventListener('click', () => {
+    cornerTimerState.currentSeconds = cornerTimerState.currentSeconds + 10;
+    broadcastCornerTimerState();
+  });
+
+  updateDeskTimerUI();
+  updatePreviewCornerTimer();
+  ensureDeskTimerTicker();
+}
+
+initCornerTimerModule();
+
 

@@ -3,12 +3,18 @@ const CHANNEL_NAME = 'sports_graphics_bus';
 const channel = new BroadcastChannel(CHANNEL_NAME);
 
 const wrapper = document.getElementById('graphic-wrapper');
+const cornerTimerWrapper = document.getElementById('corner-timer-wrapper');
 let soundEnabled = true;
 let hideTimer = null;
 let hideExitTimer = null;
 let isHidingGraphic = false;
 let audioCtx = null;
 let currentGraphicPayload = null;
+
+// Corner Match Timer State
+let activeCornerTimerState = null;
+let cornerTimerInterval = null;
+let cornerTimerExitTimer = null;
 
 // Sound synthesizer using Web Audio API (Zero external assets needed)
 function playBroadcastSwoosh() {
@@ -856,12 +862,164 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
   }
 }
 
+// -------------------------------------------------------------
+// Corner Match Clock / Timer Component (Bottom-Right Corner)
+// -------------------------------------------------------------
+function formatCornerTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  if (hrs > 0) {
+    return `${hrs}:${pad(mins)}:${pad(secs)}`;
+  }
+  return `${pad(mins)}:${pad(secs)}`;
+}
+
+function renderCornerTimerHTML(state) {
+  if (!state) return '';
+  const isRunning = Boolean(state.running);
+  const timeStr = formatCornerTime(state.currentSeconds ?? 600);
+  const label = state.label || 'MATCH TIME';
+  const isDown = state.mode === 'down';
+  const isTimeZero = isDown && (state.currentSeconds <= 0);
+  const isWarning = isDown && (state.currentSeconds <= 60 && state.currentSeconds > 0);
+
+  const timeColorClass = isTimeZero
+    ? 'text-red-500 animate-pulse'
+    : isWarning
+    ? 'text-amber-400'
+    : 'text-white';
+
+  const dotClass = isRunning
+    ? 'bg-emerald-400 timer-pulse-dot'
+    : isTimeZero
+    ? 'bg-red-500 animate-ping'
+    : 'bg-amber-400';
+
+  const statusText = isRunning ? 'LIVE' : (isTimeZero ? 'TIME' : 'PAUSED');
+
+  return `
+    <div class="relative flex items-center bg-[#0d121d]/95 backdrop-blur-md border ${isTimeZero ? 'border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]' : 'border-slate-700/80'} rounded-2xl shadow-2xl overflow-hidden pl-4 pr-5 py-2.5 min-w-[200px] select-none">
+      <!-- Left Theme Accent Bar -->
+      <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--primary,#e10600)] shadow-[0_0_12px_var(--primary,#e10600)]"></div>
+
+      <!-- Left Meta: Status Dot & Period Tag -->
+      <div class="flex flex-col justify-center mr-3.5 pr-3.5 border-r border-slate-700/80">
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+          <span class="text-[9px] font-sports font-black uppercase tracking-widest text-slate-400">${statusText}</span>
+        </div>
+        <span class="text-[11px] font-sports font-black uppercase tracking-wider text-amber-400 drop-shadow truncate max-w-[105px]">${label}</span>
+      </div>
+
+      <!-- Right: High-Impact Bold Sports Clock -->
+      <div class="flex items-baseline gap-1">
+        <span class="font-sports font-black text-3xl sm:text-4xl ${timeColorClass} tracking-wider tabular-nums font-mono drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] leading-none">${timeStr}</span>
+      </div>
+    </div>
+  `;
+}
+
+function updateCornerTimer(payload = {}) {
+  if (!cornerTimerWrapper) return;
+
+  const enabled = Boolean(payload.enabled);
+  const now = Date.now();
+
+  // If receiving state from operator desk, compute network/transport latency offset
+  let calculatedSeconds = typeof payload.currentSeconds === 'number' ? payload.currentSeconds : 600;
+  if (payload.running && payload.lastUpdateTimestamp && now > payload.lastUpdateTimestamp) {
+    const elapsedSec = Math.floor((now - payload.lastUpdateTimestamp) / 1000);
+    if (elapsedSec > 0 && elapsedSec < 3600) {
+      if (payload.mode === 'down') {
+        calculatedSeconds = Math.max(0, calculatedSeconds - elapsedSec);
+      } else {
+        calculatedSeconds = calculatedSeconds + elapsedSec;
+      }
+    }
+  }
+
+  activeCornerTimerState = {
+    ...payload,
+    enabled,
+    currentSeconds: calculatedSeconds
+  };
+
+  // 1. Show or update on-air
+  if (enabled) {
+    if (cornerTimerExitTimer) {
+      clearTimeout(cornerTimerExitTimer);
+      cornerTimerExitTimer = null;
+    }
+
+    const wasHidden = cornerTimerWrapper.classList.contains('hidden');
+    cornerTimerWrapper.classList.remove('hidden', 'anim-timer-exit');
+    if (wasHidden) {
+      void cornerTimerWrapper.offsetWidth; // Reflow for clean entrance
+      cornerTimerWrapper.classList.add('anim-timer-enter');
+    }
+    cornerTimerWrapper.innerHTML = renderCornerTimerHTML(activeCornerTimerState);
+
+    // Setup or update active ticking interval
+    if (activeCornerTimerState.running) {
+      if (!cornerTimerInterval) {
+        cornerTimerInterval = setInterval(() => {
+          if (!activeCornerTimerState || !activeCornerTimerState.running) return;
+
+          if (activeCornerTimerState.mode === 'down') {
+            activeCornerTimerState.currentSeconds = Math.max(0, activeCornerTimerState.currentSeconds - 1);
+            if (activeCornerTimerState.currentSeconds === 0) {
+              activeCornerTimerState.running = false;
+            }
+          } else {
+            activeCornerTimerState.currentSeconds += 1;
+          }
+
+          if (cornerTimerWrapper && activeCornerTimerState.enabled) {
+            cornerTimerWrapper.innerHTML = renderCornerTimerHTML(activeCornerTimerState);
+          }
+        }, 1000);
+      }
+    } else {
+      if (cornerTimerInterval) {
+        clearInterval(cornerTimerInterval);
+        cornerTimerInterval = null;
+      }
+    }
+  } else {
+    // 2. Hide off-air cleanly
+    if (cornerTimerInterval) {
+      clearInterval(cornerTimerInterval);
+      cornerTimerInterval = null;
+    }
+
+    if (!cornerTimerWrapper.classList.contains('hidden')) {
+      cornerTimerWrapper.classList.remove('anim-timer-enter');
+      cornerTimerWrapper.classList.add('anim-timer-exit');
+      cornerTimerExitTimer = setTimeout(() => {
+        cornerTimerWrapper.classList.add('hidden');
+        cornerTimerWrapper.classList.remove('anim-timer-exit');
+        cornerTimerWrapper.innerHTML = '';
+        cornerTimerExitTimer = null;
+      }, 360);
+    }
+  }
+}
+
 // Apply Global Lower Third Position Offsets & Scale to broadcast-wrapper
 function applyGlobalGraphicOffset(offsets) {
   const global = (offsets && offsets['__entire_graphic__']) || { x: 0, y: 0, scale: 1.0 };
   const gx = parseFloat(global.x || 0);
   const gy = parseFloat(global.y || 0);
   const scale = parseFloat(global.scale !== undefined ? global.scale : 1.0);
+
+  if (cornerTimerWrapper) {
+    cornerTimerWrapper.style.setProperty('--global-offset-x', `${gx}px`);
+    cornerTimerWrapper.style.setProperty('--global-offset-y', `${gy}px`);
+    cornerTimerWrapper.style.setProperty('--global-scale', `${scale}`);
+  }
 
   if (wrapper) {
     wrapper.style.setProperty('--global-offset-x', `${gx}px`);
@@ -1080,6 +1238,10 @@ function handleGraphicAction(action, payload = {}, msgId = null, timestamp = nul
       if (payload && payload.theme) {
         document.body.setAttribute('data-theme', payload.theme);
       }
+      break;
+
+    case 'UPDATE_CORNER_TIMER':
+      updateCornerTimer(payload);
       break;
 
     case 'UPDATE_OFFSETS':
