@@ -799,8 +799,11 @@
         });
       }
 
-      const entranceEndFrame = detectLottieEntranceEndFrame(animationDataToUse);
+      const detection = detectLottieEntranceEndFrame(animationDataToUse);
+      const entranceEndFrame = (typeof detection === 'object' && detection) ? detection.entranceEndFrame : (detection || 30);
+      const maxKeyframeTime = (typeof detection === 'object' && detection) ? detection.maxKeyframeTime : entranceEndFrame;
       animInstance._entranceEndFrame = entranceEndFrame;
+      animInstance._maxKeyframe = maxKeyframeTime;
       animInstance._hasEntered = false;
       animInstance._isReversing = false;
       animInstance._container = container;
@@ -840,7 +843,9 @@
   // Identifies keyframe timing where the graphic's entrance settles
   // -------------------------------------------------------------
   function detectLottieEntranceEndFrame(lottieJson) {
-    if (!lottieJson || typeof lottieJson !== 'object') return 30;
+    if (!lottieJson || typeof lottieJson !== 'object') {
+      return { entranceEndFrame: 30, maxKeyframeTime: 30 };
+    }
 
     const totalFrames = (typeof lottieJson.op === 'number' && typeof lottieJson.ip === 'number')
       ? (lottieJson.op - lottieJson.ip)
@@ -848,84 +853,84 @@
 
     const fps = lottieJson.fr || 60;
 
-    // 1. Check for timeline markers (e.g. "intro", "in", "build_in", "enter")
+    // 1. Check for timeline markers (e.g. "intro", "in", "build_in", "enter", "settle")
     if (Array.isArray(lottieJson.markers) && lottieJson.markers.length > 0) {
       for (const marker of lottieJson.markers) {
         const name = String(marker.cm || marker.tm || '').toLowerCase();
-        if (/in|intro|build|enter|start/i.test(name)) {
+        if (/in|intro|build|enter|start|settle/i.test(name)) {
           const markerTime = marker.tm || 0;
           const markerDuration = marker.dr || 0;
           const endF = markerTime + markerDuration;
           if (endF > 0 && endF < totalFrames) {
-            return Math.round(endF);
+            return { entranceEndFrame: Math.round(endF), maxKeyframeTime: Math.round(endF) };
           }
         }
       }
     }
 
-    // 2. Scan animated transform keyframes across layers
-    // In broadcast graphics, entrances typically build in within 0.5 - 1.0s (up to ~1.2s max)
-    const maxEntranceSeconds = 1.0;
-    const maxEntranceFrames = Math.min(totalFrames * 0.5, Math.round(fps * maxEntranceSeconds));
-
-    let detectedEndFrame = 0;
-
+    // 2. Scan animated transform & shape keyframes across all layers
+    const keyframes = [];
     function inspectKeyframes(prop) {
       if (!prop || typeof prop !== 'object') return;
-      if (Array.isArray(prop.k) && prop.k.length > 1 && typeof prop.k[0] === 'object' && 't' in prop.k[0]) {
+      if (Array.isArray(prop.k) && prop.k.length > 0 && typeof prop.k[0] === 'object' && 't' in prop.k[0]) {
         for (const kf of prop.k) {
-          if (typeof kf.t === 'number') {
-            if (kf.t > 0 && kf.t <= maxEntranceFrames) {
-              if (kf.t > detectedEndFrame) {
-                detectedEndFrame = kf.t;
-              }
-            }
+          if (typeof kf.t === 'number' && kf.t >= 0 && kf.t <= totalFrames) {
+            keyframes.push(kf.t);
           }
+        }
+      }
+      for (const key of Object.keys(prop)) {
+        if (key !== 'k' && typeof prop[key] === 'object') {
+          inspectKeyframes(prop[key]);
         }
       }
     }
 
     const layers = Array.isArray(lottieJson.layers) ? lottieJson.layers : [];
     for (const layer of layers) {
-      const ks = layer.ks;
-      if (ks) {
-        inspectKeyframes(ks.p); // Position
-        inspectKeyframes(ks.s); // Scale
-        inspectKeyframes(ks.o); // Opacity
-        inspectKeyframes(ks.r); // Rotation
-        inspectKeyframes(ks.rx);
-        inspectKeyframes(ks.ry);
-        inspectKeyframes(ks.rz);
-      }
-
+      if (!layer || typeof layer !== 'object') continue;
+      if (layer.ks) inspectKeyframes(layer.ks);
       if (Array.isArray(layer.shapes)) {
-        function scanShapes(shapes) {
-          for (const s of shapes) {
-            if (!s) continue;
-            if (s.ks) inspectKeyframes(s.ks);
-            if (s.p) inspectKeyframes(s.p);
-            if (s.s) inspectKeyframes(s.s);
-            if (s.r) inspectKeyframes(s.r);
-            if (s.o) inspectKeyframes(s.o);
-            if (s.t && s.t.m) inspectKeyframes(s.t.m);
-            if (Array.isArray(s.it)) scanShapes(s.it);
-          }
-        }
-        scanShapes(layer.shapes);
+        for (const s of layer.shapes) inspectKeyframes(s);
       }
     }
 
-    if (detectedEndFrame > 0) {
-      return Math.round(detectedEndFrame);
+    if (keyframes.length > 0) {
+      const sorted = [...new Set(keyframes)].sort((a, b) => a - b);
+      const maxKeyframeTime = sorted[sorted.length - 1];
+
+      // Entrance in broadcast motion graphics usually completes within 0.4s to 3.5s
+      const maxEntranceWindow = Math.min(totalFrames * 0.9, fps * 3.5);
+      let detectedEndFrame = sorted[0];
+
+      for (let i = 0; i < sorted.length; i++) {
+        const t = sorted[i];
+        if (t <= maxEntranceWindow) {
+          detectedEndFrame = t;
+          // If there is a big idle gap (> 1.0s) to the next keyframe, we've reached the hold state
+          if (i + 1 < sorted.length && (sorted[i + 1] - t) > Math.round(fps * 1.0) && t >= Math.round(fps * 0.4)) {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+
+      return {
+        entranceEndFrame: Math.round(detectedEndFrame || 30),
+        maxKeyframeTime: Math.round(maxKeyframeTime || detectedEndFrame || 30)
+      };
     }
 
     // Fallback: 30 frames (~0.5s at 60fps) or 40% of short timelines
-    return Math.min(Math.round(fps * 0.5), Math.round(totalFrames * 0.4) || 30);
+    const fallback = Math.min(Math.round(fps * 0.5), Math.round(totalFrames * 0.4) || 30);
+    return { entranceEndFrame: fallback, maxKeyframeTime: fallback };
   }
 
   // -------------------------------------------------------------
   // Reverse Playback on Exit / Clear
-  // Seamlessly un-builds the graphic back to frame 0
+  // Seamlessly un-builds the graphic back to frame 0 from its CURRENT position
+  // Guarantees zero jumping and 100% complete exit reversal to frame 0
   // -------------------------------------------------------------
   function reverseLottieGraphic(container, onComplete) {
     if (!container) return false;
@@ -949,57 +954,60 @@
     }
     animInstance._isReversing = true;
 
-    // Smoothly fade out HTML overlay typography layer if present (overlay mode)
-    const overlayEl = container.querySelector('.lottie-typography-layer');
-
-    const fps = animInstance.frameRate || 60;
-    const speed = Math.max(0.75, animInstance.playSpeed || 1.0);
-    const entranceEnd = animInstance._entranceEndFrame || 30;
-    const curFrame = Math.round(animInstance.currentRawFrame || animInstance.currentFrame || 0);
-
-    // If the animation has already entered or is holding/looping past entranceEnd,
-    // jump cleanly to entranceEnd so reverse motion begins immediately with zero delay.
-    // If user takes it off-air early while still animating in, reverse from curFrame.
-    const fromFrame = animInstance._hasEntered
-      ? entranceEnd
-      : Math.max(1, Math.min(curFrame, entranceEnd));
-
-    if (fromFrame <= 1) {
-      if (typeof onComplete === 'function') onComplete();
-      return true;
-    }
-
-    const durationMs = Math.round((fromFrame / fps) * 1000 / speed);
-
-    if (overlayEl) {
-      overlayEl.style.transition = `opacity ${Math.min(durationMs, 400)}ms ease-out, transform ${Math.min(durationMs, 400)}ms ease-out`;
-      overlayEl.style.opacity = '0';
-      overlayEl.style.transform = 'translateX(-24px)';
-      overlayEl.style.pointerEvents = 'none';
-    }
-
-    // Disable loop so Bodymovin stops and fires 'complete' when reaching frame 0
+    // Immediately stop any active loop or autoplaying timeline
     animInstance.loop = false;
     if (typeof animInstance.setLoop === 'function') {
       animInstance.setLoop(false);
     }
+    try {
+      animInstance.pause();
+    } catch (e) {}
 
+    const overlayEl = container.querySelector('.lottie-typography-layer');
+    const lottieRoot = container.querySelector('.lottie-graphic-root') || container;
+
+    // Exact current frame when clear was invoked
+    const curRaw = (typeof animInstance.currentRawFrame === 'number')
+      ? animInstance.currentRawFrame
+      : (animInstance.currentFrame || 0);
+
+    const entranceEnd = animInstance._entranceEndFrame || 0;
+    const maxKeyframe = animInstance._maxKeyframe || entranceEnd;
+
+    // Determine start frame for the reverse un-build:
+    // If the graphic has settled past entranceEnd AND there are no keyframes after entranceEnd,
+    // frame entranceEnd is 100% visually identical to curRaw (zero pixel delta).
+    // Starting directly from entranceEnd eliminates any dead hold latency with zero visual jump!
+    // If there ARE animated keyframes after entranceEnd (continuous loop/particles),
+    // or if the user cleared early while still building in (curRaw < entranceEnd),
+    // reverse smoothly from curRaw directly!
+    let startFrame = Math.max(0, curRaw);
+    if (entranceEnd > 0 && curRaw >= entranceEnd && maxKeyframe <= entranceEnd) {
+      startFrame = entranceEnd;
+    }
+
+    // If already at or very close to frame 0, complete immediately
+    if (startFrame <= 0.5) {
+      animInstance._isReversing = false;
+      if (typeof onComplete === 'function') onComplete();
+      return true;
+    }
+
+    // Target duration for broadcast reverse exit (crisp 380ms - 520ms)
+    const fps = animInstance.frameRate || 60;
+    const durationMs = Math.round(Math.max(380, Math.min(520, (startFrame / fps) * 450)));
+
+    let rafId = null;
     let finished = false;
-    let safetyTimer = null;
+    const startTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
 
     const cleanup = () => {
       if (finished) return;
       finished = true;
-      if (safetyTimer) {
-        clearTimeout(safetyTimer);
-        safetyTimer = null;
+      if (rafId) {
+        if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(rafId);
+        rafId = null;
       }
-      try {
-        animInstance.removeEventListener('complete', onCompleteHandler);
-      } catch (e) {}
-      try {
-        animInstance.pause();
-      } catch (e) {}
       animInstance._isReversing = false;
       delete animInstance._cancelReverse;
 
@@ -1008,36 +1016,67 @@
       }
     };
 
-    const onCompleteHandler = () => {
-      cleanup();
-    };
-
-    animInstance.addEventListener('complete', onCompleteHandler);
-
-    // Safety timeout in case complete event is dropped or delayed
-    safetyTimer = setTimeout(() => {
-      cleanup();
-    }, Math.max(300, durationMs + 150));
-
     animInstance._cancelReverse = () => {
       if (finished) return;
       finished = true;
-      if (safetyTimer) {
-        clearTimeout(safetyTimer);
-        safetyTimer = null;
+      if (rafId) {
+        if (typeof cancelAnimationFrame !== 'undefined') cancelAnimationFrame(rafId);
+        rafId = null;
       }
-      try {
-        animInstance.removeEventListener('complete', onCompleteHandler);
-      } catch (e) {}
       animInstance._isReversing = false;
     };
 
+    // Immediately anchor to startFrame synchronously to guarantee zero initial jump or gap
     try {
-      animInstance.setDirection(-1);
-      animInstance.goToAndPlay(fromFrame, true);
-    } catch (err) {
-      console.error('Error starting Lottie reverse playback:', err);
-      cleanup();
+      animInstance.goToAndStop(startFrame, true);
+    } catch (e) {}
+
+    function step(nowTime) {
+      if (finished) return;
+      const now = nowTime || ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now());
+      const elapsed = now - startTime;
+      const progress = Math.min(1.0, elapsed / durationMs);
+
+      // Decrement frame from startFrame all the way down to 0
+      const targetFrame = Math.max(0, startFrame * (1 - progress));
+
+      try {
+        animInstance.goToAndStop(targetFrame, true);
+      } catch (err) {}
+
+      // Fade out and translate HTML typography layer if in overlay mode
+      if (overlayEl) {
+        const overlayProgress = Math.min(1.0, progress * 1.25);
+        overlayEl.style.opacity = String(Math.max(0, 1 - overlayProgress));
+        overlayEl.style.transform = `translateX(-${(progress * 28).toFixed(1)}px)`;
+        overlayEl.style.pointerEvents = 'none';
+      }
+
+      // Smoothly fade out root in the last 20% of the reverse animation to guarantee 100% full exit
+      if (progress > 0.80 && lottieRoot && lottieRoot.style) {
+        const fadeProgress = (progress - 0.80) / 0.20;
+        lottieRoot.style.opacity = String(Math.max(0, 1 - fadeProgress));
+      }
+
+      if (progress < 1.0) {
+        if (typeof requestAnimationFrame !== 'undefined') {
+          rafId = requestAnimationFrame(step);
+        } else {
+          setTimeout(step, 16);
+        }
+      } else {
+        // Enforce frame 0 explicitly at end of reverse
+        try {
+          animInstance.goToAndStop(0, true);
+        } catch (e) {}
+        cleanup();
+      }
+    }
+
+    if (typeof requestAnimationFrame !== 'undefined') {
+      rafId = requestAnimationFrame(step);
+    } else {
+      setTimeout(step, 16);
     }
 
     return true;
