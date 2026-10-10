@@ -799,13 +799,34 @@
         });
       }
 
+      const entranceEndFrame = detectLottieEntranceEndFrame(animationDataToUse);
+      animInstance._entranceEndFrame = entranceEndFrame;
+      animInstance._hasEntered = false;
+      animInstance._isReversing = false;
+      animInstance._container = container;
+      container._lottieAnimInstance = animInstance;
+
+      const onEnterFrame = () => {
+        if (animInstance.currentRawFrame >= entranceEndFrame) {
+          animInstance._hasEntered = true;
+          try {
+            animInstance.removeEventListener('enterFrame', onEnterFrame);
+          } catch (e) {}
+        }
+      };
+      animInstance.addEventListener('enterFrame', onEnterFrame);
+
       activeLottieInstances.set(container, animInstance);
 
       return {
         instance: animInstance,
         destroy: () => {
+          if (typeof animInstance._cancelReverse === 'function') {
+            animInstance._cancelReverse();
+          }
           animInstance.destroy();
           activeLottieInstances.delete(container);
+          delete container._lottieAnimInstance;
         }
       };
     } catch (err) {
@@ -814,10 +835,232 @@
     }
   }
 
+  // -------------------------------------------------------------
+  // Entrance Animation Duration & Settle Frame Detector
+  // Identifies keyframe timing where the graphic's entrance settles
+  // -------------------------------------------------------------
+  function detectLottieEntranceEndFrame(lottieJson) {
+    if (!lottieJson || typeof lottieJson !== 'object') return 30;
+
+    const totalFrames = (typeof lottieJson.op === 'number' && typeof lottieJson.ip === 'number')
+      ? (lottieJson.op - lottieJson.ip)
+      : (lottieJson.op || 60);
+
+    const fps = lottieJson.fr || 60;
+
+    // 1. Check for timeline markers (e.g. "intro", "in", "build_in", "enter")
+    if (Array.isArray(lottieJson.markers) && lottieJson.markers.length > 0) {
+      for (const marker of lottieJson.markers) {
+        const name = String(marker.cm || marker.tm || '').toLowerCase();
+        if (/in|intro|build|enter|start/i.test(name)) {
+          const markerTime = marker.tm || 0;
+          const markerDuration = marker.dr || 0;
+          const endF = markerTime + markerDuration;
+          if (endF > 0 && endF < totalFrames) {
+            return Math.round(endF);
+          }
+        }
+      }
+    }
+
+    // 2. Scan animated transform keyframes across layers
+    // In broadcast graphics, entrances typically build in within 0.5 - 1.0s (up to ~1.2s max)
+    const maxEntranceSeconds = 1.0;
+    const maxEntranceFrames = Math.min(totalFrames * 0.5, Math.round(fps * maxEntranceSeconds));
+
+    let detectedEndFrame = 0;
+
+    function inspectKeyframes(prop) {
+      if (!prop || typeof prop !== 'object') return;
+      if (Array.isArray(prop.k) && prop.k.length > 1 && typeof prop.k[0] === 'object' && 't' in prop.k[0]) {
+        for (const kf of prop.k) {
+          if (typeof kf.t === 'number') {
+            if (kf.t > 0 && kf.t <= maxEntranceFrames) {
+              if (kf.t > detectedEndFrame) {
+                detectedEndFrame = kf.t;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const layers = Array.isArray(lottieJson.layers) ? lottieJson.layers : [];
+    for (const layer of layers) {
+      const ks = layer.ks;
+      if (ks) {
+        inspectKeyframes(ks.p); // Position
+        inspectKeyframes(ks.s); // Scale
+        inspectKeyframes(ks.o); // Opacity
+        inspectKeyframes(ks.r); // Rotation
+        inspectKeyframes(ks.rx);
+        inspectKeyframes(ks.ry);
+        inspectKeyframes(ks.rz);
+      }
+
+      if (Array.isArray(layer.shapes)) {
+        function scanShapes(shapes) {
+          for (const s of shapes) {
+            if (!s) continue;
+            if (s.ks) inspectKeyframes(s.ks);
+            if (s.p) inspectKeyframes(s.p);
+            if (s.s) inspectKeyframes(s.s);
+            if (s.r) inspectKeyframes(s.r);
+            if (s.o) inspectKeyframes(s.o);
+            if (s.t && s.t.m) inspectKeyframes(s.t.m);
+            if (Array.isArray(s.it)) scanShapes(s.it);
+          }
+        }
+        scanShapes(layer.shapes);
+      }
+    }
+
+    if (detectedEndFrame > 0) {
+      return Math.round(detectedEndFrame);
+    }
+
+    // Fallback: 30 frames (~0.5s at 60fps) or 40% of short timelines
+    return Math.min(Math.round(fps * 0.5), Math.round(totalFrames * 0.4) || 30);
+  }
+
+  // -------------------------------------------------------------
+  // Reverse Playback on Exit / Clear
+  // Seamlessly un-builds the graphic back to frame 0
+  // -------------------------------------------------------------
+  function reverseLottieGraphic(container, onComplete) {
+    if (!container) return false;
+
+    let animInstance = activeLottieInstances.get(container) || container._lottieAnimInstance;
+    if (!animInstance) {
+      for (const [c, a] of activeLottieInstances.entries()) {
+        if (c === container || (c.contains && c.contains(container)) || (container.contains && container.contains(c))) {
+          animInstance = a;
+          break;
+        }
+      }
+    }
+
+    if (!animInstance) {
+      return false;
+    }
+
+    if (animInstance._isReversing) {
+      return true;
+    }
+    animInstance._isReversing = true;
+
+    // Smoothly fade out HTML overlay typography layer if present (overlay mode)
+    const overlayEl = container.querySelector('.lottie-typography-layer');
+
+    const fps = animInstance.frameRate || 60;
+    const speed = Math.max(0.75, animInstance.playSpeed || 1.0);
+    const entranceEnd = animInstance._entranceEndFrame || 30;
+    const curFrame = Math.round(animInstance.currentRawFrame || animInstance.currentFrame || 0);
+
+    // If the animation has already entered or is holding/looping past entranceEnd,
+    // jump cleanly to entranceEnd so reverse motion begins immediately with zero delay.
+    // If user takes it off-air early while still animating in, reverse from curFrame.
+    const fromFrame = animInstance._hasEntered
+      ? entranceEnd
+      : Math.max(1, Math.min(curFrame, entranceEnd));
+
+    if (fromFrame <= 1) {
+      if (typeof onComplete === 'function') onComplete();
+      return true;
+    }
+
+    const durationMs = Math.round((fromFrame / fps) * 1000 / speed);
+
+    if (overlayEl) {
+      overlayEl.style.transition = `opacity ${Math.min(durationMs, 400)}ms ease-out, transform ${Math.min(durationMs, 400)}ms ease-out`;
+      overlayEl.style.opacity = '0';
+      overlayEl.style.transform = 'translateX(-24px)';
+      overlayEl.style.pointerEvents = 'none';
+    }
+
+    // Disable loop so Bodymovin stops and fires 'complete' when reaching frame 0
+    animInstance.loop = false;
+    if (typeof animInstance.setLoop === 'function') {
+      animInstance.setLoop(false);
+    }
+
+    let finished = false;
+    let safetyTimer = null;
+
+    const cleanup = () => {
+      if (finished) return;
+      finished = true;
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+        safetyTimer = null;
+      }
+      try {
+        animInstance.removeEventListener('complete', onCompleteHandler);
+      } catch (e) {}
+      try {
+        animInstance.pause();
+      } catch (e) {}
+      animInstance._isReversing = false;
+      delete animInstance._cancelReverse;
+
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
+    };
+
+    const onCompleteHandler = () => {
+      cleanup();
+    };
+
+    animInstance.addEventListener('complete', onCompleteHandler);
+
+    // Safety timeout in case complete event is dropped or delayed
+    safetyTimer = setTimeout(() => {
+      cleanup();
+    }, Math.max(300, durationMs + 150));
+
+    animInstance._cancelReverse = () => {
+      if (finished) return;
+      finished = true;
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+        safetyTimer = null;
+      }
+      try {
+        animInstance.removeEventListener('complete', onCompleteHandler);
+      } catch (e) {}
+      animInstance._isReversing = false;
+    };
+
+    try {
+      animInstance.setDirection(-1);
+      animInstance.goToAndPlay(fromFrame, true);
+    } catch (err) {
+      console.error('Error starting Lottie reverse playback:', err);
+      cleanup();
+    }
+
+    return true;
+  }
+
+  function cancelReverse(container) {
+    if (!container) return;
+    let animInstance = activeLottieInstances.get(container) || container._lottieAnimInstance;
+    if (animInstance && typeof animInstance._cancelReverse === 'function') {
+      animInstance._cancelReverse();
+    }
+  }
+
   // Teardown all instances (called on CLEAR)
   function destroyAllLottieInstances() {
-    activeLottieInstances.forEach(anim => {
-      try { anim.destroy(); } catch (e) {}
+    activeLottieInstances.forEach((anim, container) => {
+      try {
+        if (typeof anim._cancelReverse === 'function') anim._cancelReverse();
+        anim.destroy();
+      } catch (e) {}
+      if (container && container._lottieAnimInstance) {
+        delete container._lottieAnimInstance;
+      }
     });
     activeLottieInstances.clear();
   }
@@ -833,7 +1076,10 @@
     injectDataIntoLottieJson,
     blankOutLottieTextLayers,
     buildBroadcastOverlayHTML,
+    detectLottieEntranceEndFrame,
     renderLottieGraphic,
+    reverseLottieGraphic,
+    cancelReverse,
     destroyAllLottieInstances
   };
 

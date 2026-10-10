@@ -1095,6 +1095,9 @@ function showGraphic(payload) {
     clearTimeout(hideExitTimer);
     hideExitTimer = null;
   }
+  if (window.LottieEngine && typeof window.LottieEngine.cancelReverse === 'function') {
+    window.LottieEngine.cancelReverse(wrapper);
+  }
   isHidingGraphic = false;
 
   // 1. Unhide wrapper FIRST and force layout reflow BEFORE mounting SVG / Lottie markup
@@ -1152,6 +1155,29 @@ function hideGraphic() {
     hideExitTimer = null;
   }
 
+  // Check if currently showing a Lottie graphic and reverseOnExit is enabled
+  const isLottie = (currentGraphicPayload?.template === 'lottie_motion');
+  const reverseOnExit = (currentGraphicPayload?.lottieConfig?.reverseOnExit !== false);
+
+  if (isLottie && reverseOnExit && window.LottieEngine && typeof window.LottieEngine.reverseLottieGraphic === 'function') {
+    wrapper.classList.remove('anim-enter');
+    const started = window.LottieEngine.reverseLottieGraphic(wrapper, () => {
+      wrapper.classList.add('hidden');
+      wrapper.style.opacity = '';
+      if (window.LottieEngine) {
+        window.LottieEngine.destroyAllLottieInstances();
+      }
+      wrapper.innerHTML = '';
+      isHidingGraphic = false;
+      hideExitTimer = null;
+    });
+
+    if (started) {
+      return;
+    }
+  }
+
+  // Fallback / standard non-Lottie exit animation (CSS slide out)
   wrapper.classList.remove('anim-enter');
   wrapper.classList.add('anim-exit');
 

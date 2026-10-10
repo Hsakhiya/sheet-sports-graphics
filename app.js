@@ -104,6 +104,7 @@ const selectLottieMode = document.getElementById('select-lottie-mode');
 const lottieFileInput = document.getElementById('lottie-file-input');
 const btnDownloadLottie = document.getElementById('btn-download-lottie');
 const lottieFilenameLabel = document.getElementById('lottie-filename-label');
+const lottieReverseExitToggle = document.getElementById('lottie-reverse-exit-toggle');
 const lottieLoopToggle = document.getElementById('lottie-loop-toggle');
 const selectLottieSpeed = document.getElementById('select-lottie-speed');
 const lottieMappingSection = document.getElementById('lottie-mapping-section');
@@ -122,7 +123,8 @@ let lottieConfig = {
   photoScale: 1.0,
   photoFit: 'contain',
   photoOffsets: { x: 0, y: 0 },
-  mappings: {}
+  mappings: {},
+  reverseOnExit: true
 };
 
 // Dynamic Image Sizing & Framing DOM Elements
@@ -166,6 +168,11 @@ try {
   const savedFit = localStorage.getItem('sports_graphic_photo_fit');
   if (savedFit) {
     lottieConfig.photoFit = savedFit;
+  }
+  const savedReverse = localStorage.getItem('sports_graphic_lottie_reverse_exit');
+  if (savedReverse !== null) {
+    lottieConfig.reverseOnExit = (savedReverse === 'true');
+    if (lottieReverseExitToggle) lottieReverseExitToggle.checked = lottieConfig.reverseOnExit;
   }
 } catch (e) {}
 
@@ -1091,8 +1098,19 @@ function clearOnAir() {
   liveIndicatorText.textContent = 'OFF AIR';
   liveIndicatorText.className = 'font-sports font-extrabold text-sm tracking-widest text-slate-400 uppercase';
 
-  previewRenderArea.innerHTML = '';
-  delete previewRenderArea._lastLottieKey;
+  if (lottieConfig.reverseOnExit !== false && window.LottieEngine && typeof window.LottieEngine.reverseLottieGraphic === 'function') {
+    const started = window.LottieEngine.reverseLottieGraphic(previewRenderArea, () => {
+      previewRenderArea.innerHTML = '';
+      delete previewRenderArea._lastLottieKey;
+    });
+    if (!started) {
+      previewRenderArea.innerHTML = '';
+      delete previewRenderArea._lastLottieKey;
+    }
+  } else {
+    previewRenderArea.innerHTML = '';
+    delete previewRenderArea._lastLottieKey;
+  }
 
   sendToDisplay('CLEAR', { msgId: generateMsgId('CLEAR') });
   renderRosterTable();
@@ -1248,6 +1266,9 @@ function renderConfidencePreview(payload) {
     previewRenderArea.setAttribute('data-theme', theme);
 
     // Only re-mount Bodymovin if the content/data actually changed or container is empty
+    if (window.LottieEngine && typeof window.LottieEngine.cancelReverse === 'function') {
+      window.LottieEngine.cancelReverse(previewRenderArea);
+    }
     const hasExistingLottie = previewRenderArea.querySelector('.lottie-graphic-root');
     const effectiveCfg = payload.lottieConfig || lottieConfig || {};
     const cfgScale = effectiveCfg.photoScale ?? 1.0;
@@ -2564,6 +2585,15 @@ selectLottieMode?.addEventListener('change', (e) => {
   }
   updateLottieMappingUI();
   refreshLottiePreview();
+  sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
+});
+
+// Reverse on Clear Toggle
+lottieReverseExitToggle?.addEventListener('change', (e) => {
+  lottieConfig.reverseOnExit = e.target.checked;
+  try {
+    localStorage.setItem('sports_graphic_lottie_reverse_exit', String(e.target.checked));
+  } catch (err) {}
   sendToDisplay('UPDATE_OFFSETS', { elementOffsets, lottieConfig });
 });
 
