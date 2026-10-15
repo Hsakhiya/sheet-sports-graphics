@@ -865,43 +865,69 @@ function renderCustomSvgHTML(svgMarkup, layerValues = {}, accentColor = null, of
 // -------------------------------------------------------------
 // Corner Match Clock / Timer Component (Bottom-Right Corner)
 // -------------------------------------------------------------
-function formatCornerTime(seconds) {
-  const s = Math.max(0, Math.floor(seconds));
-  const hrs = Math.floor(s / 3600);
-  const mins = Math.floor((s % 3600) / 60);
-  const secs = s % 60;
-  const pad = (n) => String(n).padStart(2, '0');
-  if (hrs > 0) {
-    return `${hrs}:${pad(mins)}:${pad(secs)}`;
+function formatCornerTime(seconds, state = {}) {
+  const isNegative = typeof seconds === 'number' && seconds < 0;
+  const absSec = Math.abs(Math.floor(seconds || 0));
+  const style = state.overtimeStyle || 'plus';
+
+  let displaySec = absSec;
+  if (isNegative && style === 'total') {
+    const initMins = Number(state.initialMinutes) || 0;
+    const initSecs = Number(state.initialSeconds) || 0;
+    const targetSec = (initMins * 60) + initSecs;
+    displaySec = targetSec + absSec;
   }
-  return `${pad(mins)}:${pad(secs)}`;
+
+  const hrs = Math.floor(displaySec / 3600);
+  const mins = Math.floor((displaySec % 3600) / 60);
+  const secs = displaySec % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const baseStr = (hrs > 0)
+    ? `${hrs}:${pad(mins)}:${pad(secs)}`
+    : `${pad(mins)}:${pad(secs)}`;
+
+  if (isNegative && style === 'plus') {
+    return `+${baseStr}`;
+  }
+  return baseStr;
 }
 
 function renderCornerTimerHTML(state) {
   if (!state) return '';
   const isRunning = Boolean(state.running);
-  const timeStr = formatCornerTime(state.currentSeconds ?? 600);
-  const label = state.label || 'MATCH TIME';
   const isDown = state.mode === 'down';
-  const isTimeZero = isDown && (state.currentSeconds <= 0);
+  const isOvertime = isDown && (typeof state.currentSeconds === 'number') && (state.currentSeconds < 0);
+  const isTimeZero = isDown && (state.currentSeconds === 0) && !state.countUpAfterZero;
   const isWarning = isDown && (state.currentSeconds <= 60 && state.currentSeconds > 0);
+  const timeStr = formatCornerTime(state.currentSeconds ?? 600, state);
+  const label = state.label || 'MATCH TIME';
 
-  const timeColorClass = isTimeZero
+  const timeColorClass = isOvertime
+    ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.5)]'
+    : isTimeZero
     ? 'text-red-500 animate-pulse'
     : isWarning
     ? 'text-amber-400'
     : 'text-white';
 
-  const dotClass = isRunning
+  const dotClass = isOvertime
+    ? (isRunning ? 'bg-amber-400 timer-pulse-dot' : 'bg-amber-500/60')
+    : isRunning
     ? 'bg-emerald-400 timer-pulse-dot'
     : isTimeZero
     ? 'bg-red-500 animate-ping'
     : 'bg-amber-400';
 
-  const statusText = isRunning ? 'LIVE' : (isTimeZero ? 'TIME' : 'PAUSED');
+  const statusText = isOvertime ? '+OT' : (isRunning ? 'LIVE' : (isTimeZero ? 'TIME' : 'PAUSED'));
+  const borderClass = isOvertime
+    ? 'border-amber-500/80 shadow-[0_0_24px_rgba(245,158,11,0.35)]'
+    : isTimeZero
+    ? 'border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+    : 'border-slate-700/80';
 
   return `
-    <div class="relative flex items-center bg-[#0d121d]/95 backdrop-blur-md border ${isTimeZero ? 'border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]' : 'border-slate-700/80'} rounded-2xl shadow-2xl overflow-hidden pl-4 pr-5 py-2.5 min-w-[200px] select-none">
+    <div class="relative flex items-center bg-[#0d121d]/95 backdrop-blur-md border ${borderClass} rounded-2xl shadow-2xl overflow-hidden pl-4 pr-5 py-2.5 min-w-[200px] select-none">
       <!-- Left Theme Accent Bar -->
       <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-[var(--primary,#e10600)] shadow-[0_0_12px_var(--primary,#e10600)]"></div>
 
@@ -934,7 +960,11 @@ function updateCornerTimer(payload = {}) {
     const elapsedSec = Math.floor((now - payload.lastUpdateTimestamp) / 1000);
     if (elapsedSec > 0 && elapsedSec < 3600) {
       if (payload.mode === 'down') {
-        calculatedSeconds = Math.max(0, calculatedSeconds - elapsedSec);
+        if (payload.countUpAfterZero) {
+          calculatedSeconds = calculatedSeconds - elapsedSec;
+        } else {
+          calculatedSeconds = Math.max(0, calculatedSeconds - elapsedSec);
+        }
       } else {
         calculatedSeconds = calculatedSeconds + elapsedSec;
       }
@@ -969,9 +999,13 @@ function updateCornerTimer(payload = {}) {
           if (!activeCornerTimerState || !activeCornerTimerState.running) return;
 
           if (activeCornerTimerState.mode === 'down') {
-            activeCornerTimerState.currentSeconds = Math.max(0, activeCornerTimerState.currentSeconds - 1);
-            if (activeCornerTimerState.currentSeconds === 0) {
-              activeCornerTimerState.running = false;
+            if (activeCornerTimerState.countUpAfterZero) {
+              activeCornerTimerState.currentSeconds -= 1;
+            } else {
+              activeCornerTimerState.currentSeconds = Math.max(0, activeCornerTimerState.currentSeconds - 1);
+              if (activeCornerTimerState.currentSeconds === 0) {
+                activeCornerTimerState.running = false;
+              }
             }
           } else {
             activeCornerTimerState.currentSeconds += 1;
